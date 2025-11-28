@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { getTours, getSiteSettings } from '@/lib/api';
 
 export default function Home() {
@@ -577,9 +578,10 @@ export default function Home() {
         {!loading && tours.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {tours.map((tour) => (
-              <div
+              <Link
                 key={tour.id}
-                className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 group"
+                href={`/tours/${tour.slug}`}
+                className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 group block"
               >
                 {/* Tour Image */}
                 <div className="relative h-64 bg-gray-200 overflow-hidden">
@@ -667,7 +669,7 @@ export default function Home() {
                     </button>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
