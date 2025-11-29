@@ -275,7 +275,7 @@ export const getTourReviews = async (req, res, next) => {
         u.avatar_url as reviewer_avatar,
         COALESCE(
           json_agg(
-            DISTINCT jsonb_build_object(
+            jsonb_build_object(
               'url', ri.image_url,
               'order', ri.display_order
             ) ORDER BY ri.display_order
