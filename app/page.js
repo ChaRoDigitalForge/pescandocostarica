@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getTours, getSiteSettings } from '@/lib/api';
+import UserMenu from '@/components/UserMenu';
 
 export default function Home() {
   const [activeFilter, setActiveFilter] = useState('all');
@@ -275,12 +276,8 @@ export default function Home() {
 
             {/* Right Side Icons */}
             <div className="flex items-center gap-4">
-              {/* User Icon */}
-              <button className="hidden lg:block p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </button>
+              {/* User Menu Component */}
+              <UserMenu />
 
               {/* Mobile Menu Button */}
               <button
@@ -293,13 +290,6 @@ export default function Home() {
                   ) : (
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                   )}
-                </svg>
-              </button>
-
-              {/* Desktop Menu Button */}
-              <button className="hidden lg:block p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
             </div>
