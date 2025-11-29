@@ -30,6 +30,11 @@ Plataforma completa de reservación de tours de pesca deportiva en Costa Rica. S
 - 🎨 **UI Moderna**: Interfaz intuitiva con Tailwind CSS
 - 🚀 **SEO Optimizado**: Meta tags y URLs amigables
 
+### Autores
+- Javer
+- Marco
+- Pablo
+
 ## 🏗️ Arquitectura del Sistema
 
 ```
