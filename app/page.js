@@ -1,13 +1,105 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { getTours, getSiteSettings } from '@/lib/api';
+import UserMenu from '@/components/UserMenu';
 
 export default function Home() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const toursPerPage = 10;
+  const [tours, setTours] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    totalPages: 0,
+    hasMore: false
+  });
+
+  // Estados para configuración del sitio con valores por defecto
+  const [slides, setSlides] = useState([
+    {
+      id: 1,
+      image: '/tour-detail-02.webp',
+      title: 'PESCA DEPORTIVA &',
+      subtitle: 'AVENTURA EN COSTA RICA',
+      description: 'Descubre las mejores experiencias de pesca deportiva en las aguas cristalinas de Costa Rica'
+    },
+    {
+      id: 2,
+      image: '/tour-detail-03.webp',
+      title: 'PESCA EN RÍO Y',
+      subtitle: 'MANGLAR',
+      description: 'Explora los ríos y manglares de Costa Rica en una aventura única de pesca deportiva'
+    },
+    {
+      id: 3,
+      image: '/tour-detail-05.webp',
+      title: 'ALTA MAR Y',
+      subtitle: 'PESCA COSTERA',
+      description: 'Vive la emoción de la pesca en alta mar o disfruta de la tranquilidad de la pesca costera'
+    }
+  ]);
+  const [features, setFeatures] = useState([
+    { id: 1, icon: '🎣', title: 'Equipos de Primera', description: 'Todo el equipo profesional incluido en tu tour' },
+    { id: 2, icon: '⚓', title: 'Capitanes Expertos', description: 'Guías locales con más de 20 años de experiencia' },
+    { id: 3, icon: '🌊', title: 'Mejores Ubicaciones', description: 'Acceso a los puntos de pesca más productivos' }
+  ]);
+  const [filters, setFilters] = useState([
+    { id: 'all', label: 'Todas' },
+    { id: 'guanacaste', label: 'Guanacaste' },
+    { id: 'puntarenas', label: 'Puntarenas' },
+    { id: 'limon', label: 'Limón' },
+    { id: 'sanJose', label: 'San José' },
+    { id: 'alajuela', label: 'Alajuela' },
+    { id: 'cartago', label: 'Cartago' },
+    { id: 'heredia', label: 'Heredia' }
+  ]);
+  const [siteConfig, setSiteConfig] = useState({
+    site_name: 'Pescando Costa Rica',
+    site_tagline: 'Tu mejor experiencia de pesca deportiva en Costa Rica',
+    contact_email: 'tours@pescandocostarica.com',
+    contact_phone: '+50612345678',
+    whatsapp_number: '50612345678',
+    whatsapp_message: 'Hola! Estoy interesado en los tours de pesca',
+    footer_text: '© 2025 Pescando Costa Rica. Todos los derechos reservados.'
+  });
+  const [socialMedia, setSocialMedia] = useState([
+    {
+      id: 1,
+      platform: 'twitter',
+      url: 'https://twitter.com',
+      icon_svg: 'M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z'
+    },
+    {
+      id: 2,
+      platform: 'facebook',
+      url: 'https://facebook.com',
+      icon_svg: 'M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z'
+    },
+    {
+      id: 3,
+      platform: 'instagram',
+      url: 'https://instagram.com',
+      icon_svg: 'M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z'
+    },
+    {
+      id: 4,
+      platform: 'linkedin',
+      url: 'https://linkedin.com',
+      icon_svg: 'M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z'
+    }
+  ]);
+  const [navigation, setNavigation] = useState([
+    { id: 1, label: 'Home', url: '/' },
+    { id: 2, label: 'Nosotros', url: '/about' },
+    { id: 3, label: 'Tours', url: '/tours' },
+    { id: 4, label: 'Destinos', url: '/destinations' },
+    { id: 5, label: 'Blog', url: '/blog' },
+    { id: 6, label: 'Contacto', url: '/contact' }
+  ]);
 
   // Estados para el filtro de búsqueda
   const [searchDestino, setSearchDestino] = useState('');
@@ -15,29 +107,91 @@ export default function Home() {
   const [searchFecha, setSearchFecha] = useState('');
   const [searchPersonas, setSearchPersonas] = useState(1);
 
-  const slides = [
-    {
-      id: 1,
-      image: '/tour-detail-02.webp',
-      title: 'PESCA DEPORTIVA &',
-      subtitle: 'AVENTURA EN COSTA RICA',
-      description: 'Descubre las mejores experiencias de pesca deportiva en las aguas cristalinas de Costa Rica con guías expertos y equipos de primera calidad'
-    },
-    {
-      id: 2,
-      image: '/tour-detail-03.webp',
-      title: 'PESCA EN RÍO Y',
-      subtitle: 'MANGLAR',
-      description: 'Explora los ríos y manglares de Costa Rica en una aventura única de pesca deportiva con capitanes experimentados'
-    },
-    {
-      id: 3,
-      image: '/tour-detail-05.webp',
-      title: 'ALTA MAR Y',
-      subtitle: 'PESCA COSTERA',
-      description: 'Vive la emoción de la pesca en alta mar o disfruta de la tranquilidad de la pesca costera en los mejores destinos'
-    }
-  ];
+  // Cargar configuración del sitio
+  useEffect(() => {
+    const fetchSiteSettings = async () => {
+      try {
+        const response = await getSiteSettings();
+        if (response.success && response.data) {
+          const { heroSlides, features, config, socialMedia, navigation, provincias } = response.data;
+
+          // Solo actualizar si tenemos datos desde la API
+          if (heroSlides && heroSlides.length > 0) {
+            setSlides(heroSlides.map((slide, index) => ({
+              id: slide.id || index + 1,
+              image: slide.image_url,
+              title: slide.title,
+              subtitle: slide.subtitle,
+              description: slide.description
+            })));
+          }
+
+          if (features && features.length > 0) {
+            setFeatures(features);
+          }
+
+          if (config && Object.keys(config).length > 0) {
+            setSiteConfig(config);
+          }
+
+          if (socialMedia && socialMedia.length > 0) {
+            setSocialMedia(socialMedia);
+          }
+
+          if (navigation && navigation.length > 0) {
+            setNavigation(navigation);
+          }
+
+          // Crear filtros de provincias dinámicamente
+          if (provincias && provincias.length > 0) {
+            const provinciaFilters = provincias.map(p => ({
+              id: p.code,
+              label: p.name
+            }));
+            setFilters([{ id: 'all', label: 'Todas' }, ...provinciaFilters]);
+          }
+        }
+      } catch (error) {
+        console.warn('Using default site settings');
+      }
+    };
+
+    fetchSiteSettings();
+  }, []);
+
+  // Cargar tours desde la API
+  useEffect(() => {
+    const fetchTours = async () => {
+      setLoading(true);
+      try {
+        const filters = {
+          page: currentPage,
+          limit: 10
+        };
+
+        if (activeFilter !== 'all') {
+          filters.provincia = activeFilter;
+        }
+
+        const response = await getTours(filters);
+
+        if (response.success) {
+          setTours(response.data);
+          setPagination(response.pagination);
+        } else {
+          setTours([]);
+          setPagination({ total: 0, totalPages: 0, hasMore: false });
+        }
+      } catch (error) {
+        console.error('Error loading tours:', error);
+        setTours([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTours();
+  }, [activeFilter, currentPage]);
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % slides.length);
@@ -47,347 +201,13 @@ export default function Home() {
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
   };
 
-  const tours = [
-    // Puntarenas
-    {
-      id: 1,
-      title: "Pesca Deportiva en Alta Mar",
-      location: "Quepos, Puntarenas",
-      duration: "1 Día",
-      price: "850",
-      capacity: "6",
-      rating: 5,
-      reviews: 12,
-      featured: true,
-      images: 5,
-      category: "puntarenas",
-      image: "/tour-detail-02.webp"
-    },
-    {
-      id: 2,
-      title: "Pesca en Río y Manglar",
-      location: "Sierpe, Osa",
-      duration: "4 Horas",
-      price: "450",
-      capacity: "4",
-      rating: 5,
-      reviews: 8,
-      featured: true,
-      images: 6,
-      category: "puntarenas",
-      image: "/tour-detail-03.webp"
-    },
-    {
-      id: 3,
-      title: "Pesca de Marlín y Pez Vela",
-      location: "Golfito, Puntarenas",
-      duration: "8 Horas",
-      price: "950",
-      capacity: "5",
-      rating: 5,
-      reviews: 18,
-      featured: true,
-      images: 7,
-      category: "puntarenas",
-      image: "/tour-detail-02.webp"
-    },
-
-    // Guanacaste
-    {
-      id: 4,
-      title: "Pesca Costera",
-      location: "Tamarindo, Guanacaste",
-      duration: "6 Horas",
-      price: "600",
-      capacity: "5",
-      rating: 5,
-      reviews: 15,
-      featured: false,
-      images: 4,
-      category: "guanacaste",
-      image: "/tour-detail-05.webp"
-    },
-    {
-      id: 5,
-      title: "Tour de Pesca Completo",
-      location: "Flamingo, Guanacaste",
-      duration: "2 Días",
-      price: "1200",
-      capacity: "6",
-      rating: 5,
-      reviews: 20,
-      featured: true,
-      images: 8,
-      category: "guanacaste",
-      image: "/tour-detail-10.webp"
-    },
-    {
-      id: 6,
-      title: "Pesca al Atardecer",
-      location: "Playa del Coco, Guanacaste",
-      duration: "5 Horas",
-      price: "550",
-      capacity: "4",
-      rating: 5,
-      reviews: 14,
-      featured: false,
-      images: 5,
-      category: "guanacaste",
-      image: "/tour-detail-05.webp"
-    },
-
-    // Limón
-    {
-      id: 7,
-      title: "Pesca en el Caribe",
-      location: "Puerto Viejo, Limón",
-      duration: "6 Horas",
-      price: "480",
-      capacity: "4",
-      rating: 5,
-      reviews: 11,
-      featured: false,
-      images: 4,
-      category: "limon",
-      image: "/tour-detail-03.webp"
-    },
-    {
-      id: 8,
-      title: "Aventura de Pesca Caribeña",
-      location: "Tortuguero, Limón",
-      duration: "1 Día",
-      price: "720",
-      capacity: "5",
-      rating: 5,
-      reviews: 16,
-      featured: true,
-      images: 6,
-      category: "limon",
-      image: "/tour-detail-02.webp"
-    },
-    {
-      id: 9,
-      title: "Pesca en Canales y Ríos",
-      location: "Cahuita, Limón",
-      duration: "4 Horas",
-      price: "380",
-      capacity: "3",
-      rating: 5,
-      reviews: 9,
-      featured: false,
-      images: 3,
-      category: "limon",
-      image: "/tour-detail-03.webp"
-    },
-
-    // San José
-    {
-      id: 10,
-      title: "Pesca en Embalses",
-      location: "Embalse Cachí, San José",
-      duration: "5 Horas",
-      price: "350",
-      capacity: "4",
-      rating: 4,
-      reviews: 7,
-      featured: false,
-      images: 3,
-      category: "sanJose",
-      image: "/tour-detail-05.webp"
-    },
-    {
-      id: 11,
-      title: "Pesca de Trucha en Río",
-      location: "Río Virilla, San José",
-      duration: "3 Horas",
-      price: "280",
-      capacity: "3",
-      rating: 4,
-      reviews: 6,
-      featured: false,
-      images: 2,
-      category: "sanJose",
-      image: "/tour-detail-03.webp"
-    },
-    {
-      id: 12,
-      title: "Tour de Pesca en Lago",
-      location: "Lago de Cote, San José",
-      duration: "6 Horas",
-      price: "420",
-      capacity: "5",
-      rating: 5,
-      reviews: 10,
-      featured: false,
-      images: 4,
-      category: "sanJose",
-      image: "/tour-detail-02.webp"
-    },
-
-    // Alajuela
-    {
-      id: 13,
-      title: "Pesca de Guapote",
-      location: "Lago Arenal, Alajuela",
-      duration: "7 Horas",
-      price: "580",
-      capacity: "4",
-      rating: 5,
-      reviews: 13,
-      featured: true,
-      images: 5,
-      category: "alajuela",
-      image: "/tour-detail-10.webp"
-    },
-    {
-      id: 14,
-      title: "Pesca Deportiva en Reservorio",
-      location: "Embalse Sandillal, Alajuela",
-      duration: "5 Horas",
-      price: "400",
-      capacity: "3",
-      rating: 4,
-      reviews: 8,
-      featured: false,
-      images: 3,
-      category: "alajuela",
-      image: "/tour-detail-05.webp"
-    },
-    {
-      id: 15,
-      title: "Expedición de Pesca en Río",
-      location: "Río San Carlos, Alajuela",
-      duration: "6 Horas",
-      price: "490",
-      capacity: "5",
-      rating: 5,
-      reviews: 12,
-      featured: false,
-      images: 4,
-      category: "alajuela",
-      image: "/tour-detail-03.webp"
-    },
-
-    // Cartago
-    {
-      id: 16,
-      title: "Pesca en Río de Montaña",
-      location: "Río Reventazón, Cartago",
-      duration: "4 Horas",
-      price: "320",
-      capacity: "3",
-      rating: 4,
-      reviews: 5,
-      featured: false,
-      images: 2,
-      category: "cartago",
-      image: "/tour-detail-03.webp"
-    },
-    {
-      id: 17,
-      title: "Tour de Pesca en Río Grande",
-      location: "Río Grande de Orosi, Cartago",
-      duration: "5 Horas",
-      price: "390",
-      capacity: "4",
-      rating: 5,
-      reviews: 9,
-      featured: false,
-      images: 3,
-      category: "cartago",
-      image: "/tour-detail-02.webp"
-    },
-    {
-      id: 18,
-      title: "Pesca Deportiva en Embalse",
-      location: "Embalse de Cachí, Cartago",
-      duration: "6 Horas",
-      price: "450",
-      capacity: "5",
-      rating: 5,
-      reviews: 11,
-      featured: false,
-      images: 4,
-      category: "cartago",
-      image: "/tour-detail-05.webp"
-    },
-
-    // Heredia
-    {
-      id: 19,
-      title: "Pesca en Río Sarapiquí",
-      location: "Puerto Viejo de Sarapiquí, Heredia",
-      duration: "5 Horas",
-      price: "420",
-      capacity: "4",
-      rating: 5,
-      reviews: 10,
-      featured: false,
-      images: 4,
-      category: "heredia",
-      image: "/tour-detail-03.webp"
-    },
-    {
-      id: 20,
-      title: "Aventura de Pesca en Selva",
-      location: "La Virgen, Heredia",
-      duration: "7 Horas",
-      price: "530",
-      capacity: "5",
-      rating: 5,
-      reviews: 12,
-      featured: true,
-      images: 5,
-      category: "heredia",
-      image: "/tour-detail-10.webp"
-    },
-    {
-      id: 21,
-      title: "Pesca en Río de Bajura",
-      location: "Río Chirripó, Heredia",
-      duration: "4 Horas",
-      price: "360",
-      capacity: "3",
-      rating: 4,
-      reviews: 7,
-      featured: false,
-      images: 3,
-      category: "heredia",
-      image: "/tour-detail-02.webp"
-    }
-  ];
-
-  const filters = [
-    { id: 'all', label: 'Todas' },
-    { id: 'guanacaste', label: 'Guanacaste' },
-    { id: 'puntarenas', label: 'Puntarenas' },
-    { id: 'limon', label: 'Limón' },
-    { id: 'sanJose', label: 'San José' },
-    { id: 'alajuela', label: 'Alajuela' },
-    { id: 'cartago', label: 'Cartago' },
-    { id: 'heredia', label: 'Heredia' }
-  ];
-
-  const filteredTours = activeFilter === 'all'
-    ? tours
-    : tours.filter(tour => tour.category === activeFilter);
-
-  // Calcular paginación
-  const totalPages = Math.ceil(filteredTours.length / toursPerPage);
-  const indexOfLastTour = currentPage * toursPerPage;
-  const indexOfFirstTour = indexOfLastTour - toursPerPage;
-  const currentTours = filteredTours.slice(indexOfFirstTour, indexOfLastTour);
-
-  // Resetear página cuando cambia el filtro
   const handleFilterChange = (filterId) => {
     setActiveFilter(filterId);
     setCurrentPage(1);
   };
 
-  // Función para cambiar de página
   const paginate = (pageNumber) => {
     setCurrentPage(pageNumber);
-    // Scroll suave a la sección de tours
     document.getElementById('tours')?.scrollIntoView({ behavior: 'smooth' });
   };
 
@@ -398,26 +218,19 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center text-sm">
           {/* Social Media Icons */}
           <div className="flex items-center gap-3">
-            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="hover:text-green-200 transition-colors">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-              </svg>
-            </a>
-            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="hover:text-green-200 transition-colors">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-              </svg>
-            </a>
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="hover:text-green-200 transition-colors">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-              </svg>
-            </a>
-            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="hover:text-green-200 transition-colors">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-              </svg>
-            </a>
+            {socialMedia.map((social) => (
+              <a
+                key={social.id}
+                href={social.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-green-200 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d={social.icon_svg} />
+                </svg>
+              </a>
+            ))}
           </div>
 
           {/* Contact Email */}
@@ -425,7 +238,7 @@ export default function Home() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
-            <span>tours@pescandocostarica.com</span>
+            <span>{siteConfig.contact_email || 'tours@pescandocostarica.com'}</span>
           </div>
         </div>
       </div>
@@ -440,42 +253,31 @@ export default function Home() {
                 <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
                   <span className="text-white text-2xl font-bold">🎣</span>
                 </div>
-                <span className="text-xl font-bold text-gray-900">Pescando Costa Rica</span>
+                <span className="text-xl font-bold text-gray-900">{siteConfig.site_name || 'Pescando Costa Rica'}</span>
               </a>
             </div>
 
             {/* Desktop Menu */}
             <div className="hidden lg:flex items-center space-x-8">
-              <a href="/" className="text-green-600 font-medium hover:text-green-700 transition-colors">Home</a>
-              <a href="/about" className="text-gray-700 hover:text-green-600 transition-colors">Nosotros</a>
-              <div className="relative group">
-                <button className="text-gray-700 hover:text-green-600 transition-colors flex items-center gap-1">
-                  Tours
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-              </div>
-              <div className="relative group">
-                <button className="text-gray-700 hover:text-green-600 transition-colors flex items-center gap-1">
-                  Destinos
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-              </div>
-              <a href="/blog" className="text-gray-700 hover:text-green-600 transition-colors">Blog</a>
-              <a href="/contact" className="text-gray-700 hover:text-green-600 transition-colors">Contacto</a>
+              {navigation.map((item) => (
+                <a
+                  key={item.id}
+                  href={item.url}
+                  className={`${
+                    item.url === '/'
+                      ? 'text-green-600 font-medium hover:text-green-700'
+                      : 'text-gray-700 hover:text-green-600'
+                  } transition-colors`}
+                >
+                  {item.label}
+                </a>
+              ))}
             </div>
 
             {/* Right Side Icons */}
             <div className="flex items-center gap-4">
-              {/* User Icon */}
-              <button className="hidden lg:block p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </button>
+              {/* User Menu Component */}
+              <UserMenu />
 
               {/* Mobile Menu Button */}
               <button
@@ -490,13 +292,6 @@ export default function Home() {
                   )}
                 </svg>
               </button>
-
-              {/* Desktop Menu Button */}
-              <button className="hidden lg:block p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
             </div>
           </div>
 
@@ -504,12 +299,19 @@ export default function Home() {
           {mobileMenuOpen && (
             <div className="lg:hidden py-4 border-t border-gray-200">
               <div className="flex flex-col space-y-3">
-                <a href="/" className="text-green-600 font-medium px-4 py-2 hover:bg-gray-50 rounded-lg">Home</a>
-                <a href="/about" className="text-gray-700 px-4 py-2 hover:bg-gray-50 rounded-lg">Nosotros</a>
-                <a href="/tours" className="text-gray-700 px-4 py-2 hover:bg-gray-50 rounded-lg">Tours</a>
-                <a href="/destinations" className="text-gray-700 px-4 py-2 hover:bg-gray-50 rounded-lg">Destinos</a>
-                <a href="/blog" className="text-gray-700 px-4 py-2 hover:bg-gray-50 rounded-lg">Blog</a>
-                <a href="/contact" className="text-gray-700 px-4 py-2 hover:bg-gray-50 rounded-lg">Contacto</a>
+                {navigation.map((item) => (
+                  <a
+                    key={item.id}
+                    href={item.url}
+                    className={`${
+                      item.url === '/'
+                        ? 'text-green-600 font-medium'
+                        : 'text-gray-700'
+                    } px-4 py-2 hover:bg-gray-50 rounded-lg`}
+                  >
+                    {item.label}
+                  </a>
+                ))}
               </div>
             </div>
           )}
@@ -713,27 +515,15 @@ export default function Home() {
       {/* Features Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-          <div className="p-6">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl">🎣</span>
+          {features.map((feature) => (
+            <div key={feature.id} className="p-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">{feature.icon}</span>
+              </div>
+              <h3 className="text-xl font-bold mb-2 text-gray-800">{feature.title}</h3>
+              <p className="text-gray-600">{feature.description}</p>
             </div>
-            <h3 className="text-xl font-bold mb-2 text-gray-800">Equipos de Primera</h3>
-            <p className="text-gray-600">Todo el equipo profesional incluido en tu tour</p>
-          </div>
-          <div className="p-6">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl">⚓</span>
-            </div>
-            <h3 className="text-xl font-bold mb-2 text-gray-800">Capitanes Expertos</h3>
-            <p className="text-gray-600">Guías locales con más de 20 años de experiencia</p>
-          </div>
-          <div className="p-6">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl">🌊</span>
-            </div>
-            <h3 className="text-xl font-bold mb-2 text-gray-800">Mejores Ubicaciones</h3>
-            <p className="text-gray-600">Acceso a los puntos de pesca más productivos</p>
-          </div>
+          ))}
         </div>
       </section>
 
@@ -767,111 +557,124 @@ export default function Home() {
           ))}
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+          </div>
+        )}
+
         {/* Tour Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {currentTours.map((tour) => (
-            <div
-              key={tour.id}
-              className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 group"
-            >
-              {/* Tour Image */}
-              <div className="relative h-64 bg-gray-200 overflow-hidden">
-                <Image
-                  src={tour.image}
-                  alt={tour.title}
-                  fill
-                  className="object-cover group-hover:scale-110 transition-transform duration-500"
-                />
+        {!loading && tours.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {tours.map((tour) => (
+              <Link
+                key={tour.id}
+                href={`/tours/${tour.slug}`}
+                className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 group block"
+              >
+                {/* Tour Image */}
+                <div className="relative h-64 bg-gray-200 overflow-hidden">
+                  <Image
+                    src={tour.main_image_url}
+                    alt={tour.title}
+                    fill
+                    className="object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
 
-                {/* Top Meta */}
-                <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
-                  {tour.featured && (
-                    <div className="bg-green-600 text-white text-xs font-bold px-3 py-1.5 rounded">
-                      Destacado
-                    </div>
-                  )}
-                  <div className="ml-auto flex gap-2">
-                    <div className="bg-gray-800/70 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-                      </svg>
-                      <span>{tour.images}</span>
-                    </div>
-                    <div className="bg-gray-800/70 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                      </svg>
-                      <span>{tour.featured ? '1' : '0'}</span>
+                  {/* Top Meta */}
+                  <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
+                    {tour.is_featured && (
+                      <div className="bg-green-600 text-white text-xs font-bold px-3 py-1.5 rounded">
+                        Destacado
+                      </div>
+                    )}
+                    <div className="ml-auto flex gap-2">
+                      <div className="bg-gray-800/70 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+                        </svg>
+                        <span>{tour.image_gallery?.length || 0}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Tour Content */}
-              <div className="p-5">
-                {/* Location */}
-                <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <span className="truncate">{tour.location}</span>
-                </div>
-
-                {/* Title */}
-                <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2 hover:text-green-600 transition-colors cursor-pointer">
-                  {tour.title}
-                </h3>
-
-                {/* Rating */}
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="flex text-orange-400">
-                    {[...Array(5)].map((_, i) => (
-                      <svg key={i} className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                        <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                      </svg>
-                    ))}
-                  </div>
-                  <span className="text-sm text-gray-500">({tour.reviews} Reviews)</span>
-                </div>
-
-                {/* Tour Info */}
-                <div className="flex items-center gap-4 mb-5 text-sm">
-                  <div className="flex items-center gap-1 text-green-600">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                {/* Tour Content */}
+                <div className="p-5">
+                  {/* Location */}
+                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    <span className="text-gray-700">{tour.duration}</span>
+                    <span className="truncate">{tour.location_name}, {tour.provincia_name}</span>
                   </div>
-                  <div className="flex items-center gap-1 text-green-600">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    <span className="text-gray-700">{tour.capacity} Personas</span>
-                  </div>
-                </div>
 
-                {/* Price */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                  <div>
-                    <span className="text-xs text-gray-500">From</span>
-                    <div className="text-xl font-bold text-green-600">
-                      ${tour.price}.00
+                  {/* Title */}
+                  <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2 hover:text-green-600 transition-colors cursor-pointer">
+                    {tour.title}
+                  </h3>
+
+                  {/* Rating */}
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="flex text-orange-400">
+                      {[...Array(5)].map((_, i) => (
+                        <svg key={i} className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                          <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                        </svg>
+                      ))}
+                    </div>
+                    <span className="text-sm text-gray-500">({tour.total_reviews} Reviews)</span>
+                  </div>
+
+                  {/* Tour Info */}
+                  <div className="flex items-center gap-4 mb-5 text-sm">
+                    <div className="flex items-center gap-1 text-green-600">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-gray-700">{tour.duration_display}</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-green-600">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                      <span className="text-gray-700">{tour.capacity} Personas</span>
                     </div>
                   </div>
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <svg className="w-6 h-6 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                    </svg>
-                  </button>
+
+                  {/* Price */}
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                    <div>
+                      <span className="text-xs text-gray-500">From</span>
+                      <div className="text-xl font-bold text-green-600">
+                        ${tour.price}
+                      </div>
+                    </div>
+                    <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                      <svg className="w-6 h-6 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {/* No Tours Found */}
+        {!loading && tours.length === 0 && (
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4">🎣</div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">No se encontraron tours</h3>
+            <p className="text-gray-600">Intenta con otro filtro o provincia</p>
+          </div>
+        )}
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {!loading && pagination.totalPages > 1 && (
           <div className="flex justify-center items-center gap-2 mt-12">
             {/* Previous Button */}
             <button
@@ -889,12 +692,11 @@ export default function Home() {
             </button>
 
             {/* Page Numbers */}
-            {[...Array(totalPages)].map((_, index) => {
+            {[...Array(pagination.totalPages)].map((_, index) => {
               const pageNumber = index + 1;
-              // Mostrar solo páginas cercanas a la actual
               if (
                 pageNumber === 1 ||
-                pageNumber === totalPages ||
+                pageNumber === pagination.totalPages ||
                 (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
               ) {
                 return (
@@ -922,9 +724,9 @@ export default function Home() {
             {/* Next Button */}
             <button
               onClick={() => paginate(currentPage + 1)}
-              disabled={currentPage === totalPages}
+              disabled={currentPage === pagination.totalPages}
               className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
-                currentPage === totalPages
+                currentPage === pagination.totalPages
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                   : 'bg-white text-gray-700 hover:bg-green-600 hover:text-white shadow-sm'
               }`}
@@ -961,13 +763,13 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="tel:+50612345678"
+              href={`tel:+${siteConfig.contact_phone || '50612345678'}`}
               className="bg-white hover:bg-gray-100 text-green-700 font-bold px-8 py-4 rounded-lg text-lg transition-all duration-300"
             >
               📞 Llamar Ahora
             </a>
             <a
-              href="https://wa.me/50612345678"
+              href={`https://wa.me/${siteConfig.whatsapp_number || '50612345678'}`}
               className="bg-green-800 hover:bg-green-900 text-white font-bold px-8 py-4 rounded-lg text-lg transition-all duration-300"
               target="_blank"
               rel="noopener noreferrer"
@@ -981,15 +783,15 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-300 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="mb-2 text-lg font-semibold text-white">Pescando Costa Rica</p>
-          <p className="text-sm">Tu mejor experiencia de pesca deportiva en Costa Rica</p>
-          <p className="text-sm mt-4">&copy; 2025 Pescando Costa Rica. Todos los derechos reservados.</p>
+          <p className="mb-2 text-lg font-semibold text-white">{siteConfig.site_name || 'Pescando Costa Rica'}</p>
+          <p className="text-sm">{siteConfig.site_tagline || 'Tu mejor experiencia de pesca deportiva en Costa Rica'}</p>
+          <p className="text-sm mt-4">{siteConfig.footer_text || '© 2025 Pescando Costa Rica. Todos los derechos reservados.'}</p>
         </div>
       </footer>
 
       {/* WhatsApp Floating Button */}
       <a
-        href="https://wa.me/50612345678?text=Hola!%20Estoy%20interesado%20en%20los%20tours%20de%20pesca"
+        href={`https://wa.me/${siteConfig.whatsapp_number || '50612345678'}?text=${encodeURIComponent(siteConfig.whatsapp_message || 'Hola! Estoy interesado en los tours de pesca')}`}
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 group"
