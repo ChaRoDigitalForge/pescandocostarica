@@ -87,7 +87,7 @@ export const getMyBookings = async (req, res, next) => {
       SELECT b.*, t.title as tour_title, t.main_image_url
       FROM bookings b
       INNER JOIN tours t ON b.tour_id = t.id
-      WHERE t.capitan_id = $1 AND b.deleted_at IS NULL
+      WHERE t.capitan_id = $1
     `;
     const params = [req.user.id];
     let paramCount = 2;
@@ -116,7 +116,7 @@ export const getMyBookings = async (req, res, next) => {
     const countQuery = `
       SELECT COUNT(*) as total FROM bookings b
       INNER JOIN tours t ON b.tour_id = t.id
-      WHERE t.capitan_id = $1 AND b.deleted_at IS NULL
+      WHERE t.capitan_id = $1
       ${status ? `AND b.status = '${status}'` : ''}
       ${date_from ? `AND b.booking_date >= '${date_from}'` : ''}
       ${date_to ? `AND b.booking_date <= '${date_to}'` : ''}
@@ -188,7 +188,6 @@ export const getStatistics = async (req, res, next) => {
       WHERE t.capitan_id = $1
         AND b.booking_date >= CURRENT_DATE
         AND b.status IN ('pending', 'confirmed')
-        AND b.deleted_at IS NULL
     `;
 
     const upcomingResult = await query(upcomingQuery, [req.user.id]);
@@ -204,7 +203,6 @@ export const getStatistics = async (req, res, next) => {
       WHERE t.capitan_id = $1
         AND b.booking_date >= CURRENT_DATE - INTERVAL '6 months'
         AND b.status IN ('confirmed', 'completed')
-        AND b.deleted_at IS NULL
       GROUP BY TO_CHAR(b.booking_date, 'YYYY-MM')
       ORDER BY month DESC
     `;
@@ -257,7 +255,7 @@ export const updateBookingStatus = async (req, res, next) => {
       `SELECT b.*, t.capitan_id
        FROM bookings b
        INNER JOIN tours t ON b.tour_id = t.id
-       WHERE b.booking_number = $1 AND b.deleted_at IS NULL`,
+       WHERE b.booking_number = $1`,
       [booking_number]
     );
 
