@@ -31,7 +31,7 @@ Plataforma completa de reservación de tours de pesca deportiva en Costa Rica. S
 - 🚀 **SEO Optimizado**: Meta tags y URLs amigables
 
 ### Autores
-- Javer
+- Javier
 - Marco
 - Pablo
 
