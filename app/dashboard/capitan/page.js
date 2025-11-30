@@ -32,11 +32,22 @@ export default function CaptainDashboard() {
   }, [isAuthenticated, isCapitan, authLoading, router]);
 
   useEffect(() => {
+    console.log('🔐 Auth Status:', {
+      isAuthenticated,
+      isCapitan,
+      userRole: user?.role,
+      userName: user?.first_name
+    });
+
     if (isAuthenticated && isCapitan) {
       fetchDashboardData();
       fetchNotifications();
+    } else if (isAuthenticated && !isCapitan) {
+      console.warn('⚠️ User is authenticated but not a captain. Role:', user?.role);
+    } else if (!isAuthenticated) {
+      console.warn('⚠️ User is not authenticated');
     }
-  }, [isAuthenticated, isCapitan]);
+  }, [isAuthenticated, isCapitan, user]);
 
   useEffect(() => {
     if (user) {
@@ -57,6 +68,8 @@ export default function CaptainDashboard() {
     setLoading(true);
     try {
       const token = localStorage.getItem('auth_token');
+      console.log('🔑 Token exists:', !!token);
+      console.log('🌐 API URL:', process.env.NEXT_PUBLIC_API_URL);
 
       const [statsResponse, bookingsResponse, toursResponse] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/captain/statistics`, {
@@ -70,22 +83,38 @@ export default function CaptainDashboard() {
         })
       ]);
 
+      console.log('📊 Statistics Response Status:', statsResponse.status, statsResponse.ok);
+      console.log('📅 Bookings Response Status:', bookingsResponse.status, bookingsResponse.ok);
+      console.log('🎣 Tours Response Status:', toursResponse.status, toursResponse.ok);
+
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
+        console.log('✅ Statistics Data:', statsData);
         setStatistics(statsData.data);
+      } else {
+        const errorData = await statsResponse.json();
+        console.error('❌ Statistics Error:', errorData);
       }
 
       if (bookingsResponse.ok) {
         const bookingsData = await bookingsResponse.json();
+        console.log('✅ Bookings Data:', bookingsData);
         setBookings(bookingsData.data || []);
+      } else {
+        const errorData = await bookingsResponse.json();
+        console.error('❌ Bookings Error:', errorData);
       }
 
       if (toursResponse.ok) {
         const toursData = await toursResponse.json();
+        console.log('✅ Tours Data:', toursData);
         setTours(toursData.data || []);
+      } else {
+        const errorData = await toursResponse.json();
+        console.error('❌ Tours Error:', errorData);
       }
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error('💥 Error fetching dashboard data:', error);
       // Set fallback data for demonstration
       setStatistics({
         overview: {

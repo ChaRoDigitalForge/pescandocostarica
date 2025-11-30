@@ -45,3 +45,7 @@ next-env.d.ts
 
 #Claude AI
 /.claude
+
+# Windows nul file artifacts
+nul
+**/nul
