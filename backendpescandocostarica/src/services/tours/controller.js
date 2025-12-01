@@ -108,7 +108,25 @@ export const getTourBySlug = async (req, res, next) => {
   try {
     const { slug } = req.params;
 
-    const tourQuery = `
+    // Check if boats and fish_species tables exist
+    const checkTablesQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND table_name = 'boats'
+      ) as boats_exists,
+      EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND table_name = 'fish_species'
+      ) as species_exists
+    `;
+
+    const tablesCheck = await query(checkTablesQuery);
+    const boatsExist = tablesCheck.rows[0].boats_exists;
+    const speciesExist = tablesCheck.rows[0].species_exists;
+
+    let tourQuery = `
       SELECT
         t.*,
         p.name as provincia_name,
@@ -152,7 +170,69 @@ export const getTourBySlug = async (req, res, next) => {
             ) ORDER BY tr.display_order
           ) FILTER (WHERE tr.id IS NOT NULL),
           '[]'
-        ) as requirements
+        ) as requirements`;
+
+    // Add boats only if table exists
+    if (boatsExist) {
+      tourQuery += `,
+        COALESCE(
+          (
+            SELECT json_agg(
+              jsonb_build_object(
+                'id', b2.id,
+                'name', b2.name,
+                'boat_type', b2.boat_type,
+                'brand', b2.brand,
+                'model', b2.model,
+                'year', b2.year,
+                'length_feet', b2.length_feet,
+                'capacity', b2.capacity,
+                'description', b2.description,
+                'features', b2.features,
+                'images', b2.images,
+                'is_primary', tb2.is_primary
+              )
+            )
+            FROM tour_boats tb2
+            JOIN boats b2 ON tb2.boat_id = b2.id
+            WHERE tb2.tour_id = t.id AND b2.deleted_at IS NULL
+          ),
+          '[]'
+        ) as boats`;
+    } else {
+      tourQuery += `, '[]'::json as boats`;
+    }
+
+    // Add species only if table exists
+    if (speciesExist) {
+      tourQuery += `,
+        COALESCE(
+          (
+            SELECT json_agg(
+              jsonb_build_object(
+                'id', fs2.id,
+                'name_es', fs2.name_es,
+                'name_en', fs2.name_en,
+                'scientific_name', fs2.scientific_name,
+                'description', fs2.description,
+                'image_url', fs2.image_url,
+                'average_weight_lbs', fs2.average_weight_lbs,
+                'max_weight_lbs', fs2.max_weight_lbs,
+                'probability_percentage', tts2.probability_percentage,
+                'is_featured', tts2.is_featured
+              ) ORDER BY tts2.is_featured DESC, tts2.probability_percentage DESC
+            )
+            FROM tour_target_species tts2
+            JOIN fish_species fs2 ON tts2.species_id = fs2.id
+            WHERE tts2.tour_id = t.id
+          ),
+          '[]'
+        ) as target_species`;
+    } else {
+      tourQuery += `, '[]'::json as target_species`;
+    }
+
+    tourQuery += `
       FROM tours t
       LEFT JOIN provincias p ON t.provincia_id = p.id
       LEFT JOIN locations l ON t.location_id = l.id

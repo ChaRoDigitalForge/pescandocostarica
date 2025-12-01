@@ -12,6 +12,7 @@ import usersRoutes from './services/users/routes.js';
 import siteRoutes from './services/site/routes.js';
 import authRoutes from './services/auth/routes.js';
 import captainRoutes from './services/captain/routes.js';
+import reportsRoutes from './services/reports/routes.js';
 
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 import pool from './config/database.js';
@@ -70,6 +71,7 @@ app.get('/api', (req, res) => {
       bookings: '/api/bookings',
       users: '/api/users',
       site: '/api/site',
+      reports: '/api/reports',
       health: '/api/health'
     }
   });
@@ -81,6 +83,7 @@ app.use('/api/tours', toursRoutes);
 app.use('/api/bookings', bookingsRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/site', siteRoutes);
+app.use('/api/reports', reportsRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

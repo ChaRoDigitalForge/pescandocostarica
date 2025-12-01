@@ -99,6 +99,41 @@ export default function ToursPage() {
                 <p className="text-gray-600 text-sm line-clamp-2 mb-4">
                   {tour.short_description || tour.description}
                 </p>
+
+                {/* Boat and Species Info */}
+                {(tour.boats?.length > 0 || tour.target_species?.length > 0) && (
+                  <div className="mb-4 space-y-2">
+                    {tour.boats && tour.boats.length > 0 && tour.boats[0].name && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                        </svg>
+                        <span className="font-medium">{tour.boats[0].name}</span>
+                        {tour.boats[0].boat_type && (
+                          <span className="text-gray-500">• {tour.boats[0].boat_type}</span>
+                        )}
+                      </div>
+                    )}
+                    {tour.target_species && tour.target_species.length > 0 && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                        <div className="flex flex-wrap gap-1">
+                          {tour.target_species.slice(0, 3).map((species, idx) => (
+                            <span key={idx} className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs font-medium">
+                              {species.name_es}
+                            </span>
+                          ))}
+                          {tour.target_species.length > 3 && (
+                            <span className="text-gray-500 text-xs">+{tour.target_species.length - 3} más</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-2xl font-bold text-green-600">${tour.price}</span>

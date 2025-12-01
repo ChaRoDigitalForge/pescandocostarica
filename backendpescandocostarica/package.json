@@ -12,7 +12,8 @@
     "dev:users": "nodemon src/services/users/index.js",
     "dev:auth": "nodemon src/services/auth/index.js",
     "test": "jest --coverage",
-    "migrate": "node src/database/migrations/run.js"
+    "migrate": "node src/database/migrations/run.js",
+    "seed:reports": "node src/database/migrations/seed-reports-data.js"
   },
   "keywords": ["microservices", "fishing", "tours", "costa-rica"],
   "author": "Pescando Costa Rica",
