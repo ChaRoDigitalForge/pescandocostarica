@@ -5,67 +5,54 @@ export async function GET() {
   try {
     // Obtener hero slides
     const heroSlides = await sql`
-      SELECT id, image_url, title, subtitle, description, link_url, button_text, display_order
+      SELECT id, image_url, title, subtitle, description, order_position as display_order
       FROM hero_slides
       WHERE is_active = true
-      ORDER BY display_order ASC
+      ORDER BY order_position ASC
     `;
 
     // Obtener features
     const features = await sql`
-      SELECT id, icon, title, description, display_order
-      FROM features
+      SELECT id, icon, title, description, order_position as display_order
+      FROM site_features
       WHERE is_active = true
-      ORDER BY display_order ASC
+      ORDER BY order_position ASC
     `;
 
     // Obtener configuración general del sitio
     const siteConfig = await sql`
-      SELECT key, value, data_type
+      SELECT key, value
       FROM site_config
-      WHERE is_active = true
     `;
 
     // Convertir configuración a objeto
     const config = {};
     siteConfig.forEach(item => {
-      let value = item.value;
-      if (item.data_type === 'json') {
-        try {
-          value = JSON.parse(item.value);
-        } catch (e) {
-          console.error(`Error parsing JSON for key ${item.key}:`, e);
-        }
-      } else if (item.data_type === 'number') {
-        value = parseFloat(item.value);
-      } else if (item.data_type === 'boolean') {
-        value = item.value === 'true';
-      }
-      config[item.key] = value;
+      config[item.key] = item.value;
     });
 
     // Obtener redes sociales
     const socialMedia = await sql`
-      SELECT id, platform, url, icon, display_order
+      SELECT id, platform, url, icon_svg, order_position as display_order
       FROM social_media
       WHERE is_active = true
-      ORDER BY display_order ASC
+      ORDER BY order_position ASC
     `;
 
     // Obtener navegación
     const navigation = await sql`
-      SELECT id, label, url, parent_id, display_order
-      FROM navigation
+      SELECT id, label, url, parent_id, order_position as display_order
+      FROM navigation_menu
       WHERE is_active = true
-      ORDER BY display_order ASC
+      ORDER BY order_position ASC
     `;
 
     // Obtener provincias disponibles
     const provincias = await sql`
-      SELECT DISTINCT provincia
-      FROM tours
-      WHERE is_active = true AND provincia IS NOT NULL
-      ORDER BY provincia ASC
+      SELECT code, name
+      FROM provincias
+      WHERE is_active = true
+      ORDER BY name ASC
     `;
 
     return NextResponse.json({
@@ -76,7 +63,7 @@ export async function GET() {
         config,
         socialMedia,
         navigation,
-        provincias: provincias.map(p => p.provincia)
+        provincias
       }
     });
 

@@ -19,17 +19,18 @@ export async function GET(request) {
       [countResult] = await sql`
         SELECT COUNT(*) as total
         FROM tours
-        WHERE is_active = true
-          AND categoria = ${category}
-          AND provincia = ${provincia}
+        WHERE deleted_at IS NULL
+          AND status = 'active'
+          AND fishing_type = ${category}
+          AND provincia_id IN (SELECT id FROM provincias WHERE code = ${provincia})
       `;
 
       tours = await sql`
         SELECT *
-        FROM tours_view
-        WHERE is_active = true
-          AND categoria = ${category}
-          AND provincia = ${provincia}
+        FROM vw_tours_complete
+        WHERE status = 'active'
+          AND fishing_type = ${category}
+          AND provincia_code = ${provincia}
         ORDER BY is_featured DESC, created_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `;
@@ -38,13 +39,16 @@ export async function GET(request) {
       [countResult] = await sql`
         SELECT COUNT(*) as total
         FROM tours
-        WHERE is_active = true AND provincia = ${provincia}
+        WHERE deleted_at IS NULL
+          AND status = 'active'
+          AND provincia_id IN (SELECT id FROM provincias WHERE code = ${provincia})
       `;
 
       tours = await sql`
         SELECT *
-        FROM tours_view
-        WHERE is_active = true AND provincia = ${provincia}
+        FROM vw_tours_complete
+        WHERE status = 'active'
+          AND provincia_code = ${provincia}
         ORDER BY is_featured DESC, created_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `;
@@ -53,13 +57,16 @@ export async function GET(request) {
       [countResult] = await sql`
         SELECT COUNT(*) as total
         FROM tours
-        WHERE is_active = true AND categoria = ${category}
+        WHERE deleted_at IS NULL
+          AND status = 'active'
+          AND fishing_type = ${category}
       `;
 
       tours = await sql`
         SELECT *
-        FROM tours_view
-        WHERE is_active = true AND categoria = ${category}
+        FROM vw_tours_complete
+        WHERE status = 'active'
+          AND fishing_type = ${category}
         ORDER BY is_featured DESC, created_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `;
@@ -68,13 +75,13 @@ export async function GET(request) {
       [countResult] = await sql`
         SELECT COUNT(*) as total
         FROM tours
-        WHERE is_active = true
+        WHERE deleted_at IS NULL AND status = 'active'
       `;
 
       tours = await sql`
         SELECT *
-        FROM tours_view
-        WHERE is_active = true
+        FROM vw_tours_complete
+        WHERE status = 'active'
         ORDER BY is_featured DESC, created_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `;
