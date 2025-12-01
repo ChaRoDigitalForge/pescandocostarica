@@ -548,6 +548,154 @@ export default function TourDetail() {
               </div>
             </div>
 
+            {/* Boats Info */}
+            {tour.boats && tour.boats.length > 0 && (
+              <div className="bg-white rounded-xl p-8 shadow-sm mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Botes Disponibles</h2>
+                <div className="space-y-6">
+                  {tour.boats.map((boat) => (
+                    <div key={boat.id} className="border border-gray-200 rounded-lg p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900 mb-1">{boat.name}</h3>
+                          <p className="text-gray-600">
+                            {boat.brand} {boat.model} {boat.year && `(${boat.year})`}
+                          </p>
+                          {boat.is_primary && (
+                            <span className="inline-block mt-2 bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded">
+                              Bote Principal
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm text-gray-500">Tipo</div>
+                          <div className="font-semibold text-gray-900">{boat.boat_type}</div>
+                        </div>
+                      </div>
+
+                      {boat.description && (
+                        <p className="text-gray-700 mb-4">{boat.description}</p>
+                      )}
+
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                        {boat.length_feet && (
+                          <div>
+                            <div className="text-sm text-gray-500">Eslora</div>
+                            <div className="font-semibold text-gray-900">{boat.length_feet} pies</div>
+                          </div>
+                        )}
+                        <div>
+                          <div className="text-sm text-gray-500">Capacidad</div>
+                          <div className="font-semibold text-gray-900">{boat.capacity} personas</div>
+                        </div>
+                      </div>
+
+                      {boat.features && boat.features.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-gray-900 mb-2">Características:</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {boat.features.map((feature, idx) => (
+                              <span
+                                key={idx}
+                                className="bg-blue-50 text-blue-700 text-sm px-3 py-1 rounded-full"
+                              >
+                                {feature}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Target Species Info */}
+            {tour.target_species && tour.target_species.length > 0 && (
+              <div className="bg-white rounded-xl p-8 shadow-sm mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Especies Objetivo</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {tour.target_species.map((species) => (
+                    <div
+                      key={species.id}
+                      className={`border rounded-lg p-6 ${
+                        species.is_featured ? 'border-green-400 bg-green-50' : 'border-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-gray-900">{species.name_es}</h3>
+                          <p className="text-sm text-gray-600 italic">{species.name_en}</p>
+                          {species.scientific_name && (
+                            <p className="text-xs text-gray-500 italic">{species.scientific_name}</p>
+                          )}
+                        </div>
+                        {species.is_featured && (
+                          <span className="bg-green-600 text-white text-xs font-semibold px-2 py-1 rounded">
+                            Destacada
+                          </span>
+                        )}
+                      </div>
+
+                      {species.description && (
+                        <p className="text-gray-700 text-sm mb-3">{species.description}</p>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        {species.average_weight_lbs && (
+                          <div>
+                            <div className="text-xs text-gray-500">Peso Promedio</div>
+                            <div className="font-semibold text-gray-900">{species.average_weight_lbs} lbs</div>
+                          </div>
+                        )}
+                        {species.max_weight_lbs && (
+                          <div>
+                            <div className="text-xs text-gray-500">Peso Máximo</div>
+                            <div className="font-semibold text-gray-900">{species.max_weight_lbs} lbs</div>
+                          </div>
+                        )}
+                      </div>
+
+                      {species.probability_percentage && (
+                        <div className="mb-3">
+                          <div className="text-xs text-gray-500 mb-1">Probabilidad de Captura</div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-green-600 h-2 rounded-full"
+                              style={{ width: `${species.probability_percentage}%` }}
+                            ></div>
+                          </div>
+                          <div className="text-right text-xs text-gray-600 mt-1">
+                            {species.probability_percentage}%
+                          </div>
+                        </div>
+                      )}
+
+                      {species.fishing_seasons && species.fishing_seasons.length > 0 && (() => {
+                        const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                        return (
+                          <div>
+                            <div className="text-xs text-gray-500 mb-2">Mejor Temporada</div>
+                            <div className="flex flex-wrap gap-1">
+                              {species.fishing_seasons.map((month) => (
+                                <span
+                                  key={month}
+                                  className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded"
+                                >
+                                  {monthNames[month - 1]}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Captain Info */}
             {tour.capitan_name && (
               <div className="bg-white rounded-xl p-8 shadow-sm">

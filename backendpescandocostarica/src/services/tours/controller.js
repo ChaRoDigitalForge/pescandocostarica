@@ -152,7 +152,45 @@ export const getTourBySlug = async (req, res, next) => {
             ) ORDER BY tr.display_order
           ) FILTER (WHERE tr.id IS NOT NULL),
           '[]'
-        ) as requirements
+        ) as requirements,
+        COALESCE(
+          json_agg(
+            DISTINCT jsonb_build_object(
+              'id', b.id,
+              'name', b.name,
+              'boat_type', b.boat_type,
+              'brand', b.brand,
+              'model', b.model,
+              'year', b.year,
+              'length_feet', b.length_feet,
+              'capacity', b.capacity,
+              'description', b.description,
+              'features', b.features,
+              'images', b.images,
+              'is_primary', tb.is_primary
+            )
+          ) FILTER (WHERE b.id IS NOT NULL),
+          '[]'
+        ) as boats,
+        COALESCE(
+          json_agg(
+            DISTINCT jsonb_build_object(
+              'id', fs.id,
+              'name_es', fs.name_es,
+              'name_en', fs.name_en,
+              'scientific_name', fs.scientific_name,
+              'description', fs.description,
+              'image_url', fs.image_url,
+              'common_names', fs.common_names,
+              'average_weight_lbs', fs.average_weight_lbs,
+              'max_weight_lbs', fs.max_weight_lbs,
+              'fishing_seasons', fs.fishing_seasons,
+              'probability_percentage', tts.probability_percentage,
+              'is_featured', tts.is_featured
+            )
+          ) FILTER (WHERE fs.id IS NOT NULL),
+          '[]'
+        ) as target_species
       FROM tours t
       LEFT JOIN provincias p ON t.provincia_id = p.id
       LEFT JOIN locations l ON t.location_id = l.id
@@ -160,6 +198,10 @@ export const getTourBySlug = async (req, res, next) => {
       LEFT JOIN tour_services ts ON t.id = ts.tour_id
       LEFT JOIN tour_inclusions ti ON t.id = ti.tour_id
       LEFT JOIN tour_requirements tr ON t.id = tr.tour_id
+      LEFT JOIN tour_boats tb ON t.id = tb.tour_id
+      LEFT JOIN boats b ON tb.boat_id = b.id AND b.deleted_at IS NULL
+      LEFT JOIN tour_target_species tts ON t.id = tts.tour_id
+      LEFT JOIN fish_species fs ON tts.species_id = fs.id
       WHERE t.slug = $1 AND t.status = 'active' AND t.deleted_at IS NULL
       GROUP BY t.id, p.name, p.code, l.name, l.latitude, l.longitude, u.first_name, u.last_name, u.years_of_experience, u.avatar_url, u.bio
     `;
@@ -377,3 +419,4 @@ export const searchTours = async (req, res, next) => {
     next(error);
   }
 };
+
