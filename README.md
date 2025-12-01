@@ -30,11 +30,6 @@ Plataforma completa de reservación de tours de pesca deportiva en Costa Rica. S
 - 🎨 **UI Moderna**: Interfaz intuitiva con Tailwind CSS
 - 🚀 **SEO Optimizado**: Meta tags y URLs amigables
 
-### Autores
-- Javier
-- Marco
-- Pablo
-
 ## 🏗️ Arquitectura del Sistema
 
 ```
@@ -323,7 +318,9 @@ Este proyecto está bajo la Licencia MIT. Ver [`LICENSE`](LICENSE) para más inf
 
 ## 👥 Autores
 
-- **Equipo Pescando Costa Rica** - *Desarrollo Inicial*
+- Javier Chaves
+- Marco Chaves
+- Pablo Chaves
 
 ## 🙏 Agradecimientos
 
