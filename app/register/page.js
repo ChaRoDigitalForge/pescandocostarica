@@ -15,10 +15,6 @@ export default function RegisterPage() {
     last_name: '',
     phone: '',
     role: 'cliente',
-    // Captain specific fields
-    license_number: '',
-    years_of_experience: '',
-    specializations: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -53,11 +49,6 @@ export default function RegisterPage() {
       return;
     }
 
-    if (formData.role === 'capitan' && !formData.license_number) {
-      setError('Los capitanes deben proporcionar su número de licencia');
-      return;
-    }
-
     setLoading(true);
 
     // Prepare data
@@ -69,13 +60,6 @@ export default function RegisterPage() {
       phone: formData.phone,
       role: formData.role,
     };
-
-    // Add captain-specific fields if applicable
-    if (formData.role === 'capitan') {
-      userData.license_number = formData.license_number;
-      userData.years_of_experience = parseInt(formData.years_of_experience) || 0;
-      userData.specializations = formData.specializations;
-    }
 
     const result = await register(userData);
 
@@ -264,65 +248,6 @@ export default function RegisterPage() {
               />
             </div>
           </div>
-
-          {/* Captain-specific fields */}
-          {formData.role === 'capitan' && (
-            <div className="border-t pt-6 mt-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Información del Capitán</h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="license_number" className="block text-sm font-medium text-gray-700 mb-2">
-                    Número de Licencia *
-                  </label>
-                  <input
-                    id="license_number"
-                    name="license_number"
-                    type="text"
-                    required={formData.role === 'capitan'}
-                    value={formData.license_number}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Ej: CAP-12345"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="years_of_experience" className="block text-sm font-medium text-gray-700 mb-2">
-                    Años de Experiencia
-                  </label>
-                  <input
-                    id="years_of_experience"
-                    name="years_of_experience"
-                    type="number"
-                    min="0"
-                    value={formData.years_of_experience}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Ej: 10"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <label htmlFor="specializations" className="block text-sm font-medium text-gray-700 mb-2">
-                  Especializaciones
-                </label>
-                <textarea
-                  id="specializations"
-                  name="specializations"
-                  rows="3"
-                  value={formData.specializations}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Separa cada especialización con comas. Ej: Pesca deportiva, Pesca en mar abierto, Pesca costera"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  💡 Separa cada especialización con una coma
-                </p>
-              </div>
-            </div>
-          )}
 
           <div>
             <button

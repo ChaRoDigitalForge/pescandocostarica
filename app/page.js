@@ -527,6 +527,163 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Promotional Announcements Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="bg-gradient-to-br from-blue-50 via-green-50 to-blue-50 rounded-3xl overflow-hidden shadow-xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            {/* Left Side - Illustration/Image */}
+            <div className="relative p-8 lg:p-12">
+              <div className="relative">
+                {/* Decorative Background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-200/30 to-green-200/30 rounded-3xl transform rotate-6"></div>
+
+                {/* Main Visual Content */}
+                <div className="relative bg-white rounded-2xl p-8 shadow-lg">
+                  <div className="flex items-center justify-center mb-6">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-green-600/20 blur-2xl rounded-full"></div>
+                      <div className="relative text-8xl">🎣</div>
+                    </div>
+                  </div>
+
+                  {/* Decorative Elements */}
+                  <div className="absolute top-4 right-4 bg-green-600 text-white text-xs font-bold px-3 py-1.5 rounded-full animate-pulse">
+                    ¡TEMPORADA ALTA!
+                  </div>
+
+                  <div className="absolute bottom-8 left-8 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg transform -rotate-3">
+                    <div className="text-xs font-semibold">Desde</div>
+                    <div className="text-2xl font-bold">$299</div>
+                  </div>
+
+                  {/* Fishing Icons */}
+                  <div className="flex justify-center gap-4 mt-4">
+                    <div className="bg-green-100 p-3 rounded-full">
+                      <span className="text-3xl">🐟</span>
+                    </div>
+                    <div className="bg-blue-100 p-3 rounded-full">
+                      <span className="text-3xl">🌊</span>
+                    </div>
+                    <div className="bg-green-100 p-3 rounded-full">
+                      <span className="text-3xl">⚓</span>
+                    </div>
+                  </div>
+
+                  <div className="text-center mt-6">
+                    <p className="text-green-600 font-bold text-xl italic">¡Pura Vida Fishing!</p>
+                  </div>
+                </div>
+
+                {/* Location Pin Icon */}
+                <div className="absolute -top-4 -right-4 bg-red-500 text-white p-3 rounded-full shadow-lg animate-bounce">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Side - Content */}
+            <div className="p-8 lg:p-12 lg:pr-16">
+              <div className="space-y-6">
+                {/* Header */}
+                <div>
+                  <p className="text-green-600 font-semibold text-sm mb-3 uppercase tracking-wide">
+                    Temporada Especial
+                  </p>
+                  <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                    Gran Oportunidad Para
+                    <span className="block text-green-600 italic mt-2">Aventura</span>
+                    <span className="text-gray-900"> & Pesca Deportiva</span>
+                  </h2>
+                  <p className="text-gray-600 text-lg leading-relaxed">
+                    Disfruta de la mejor temporada de pesca en Costa Rica. Captura Dorado, Pez Vela, Marlín y más especies en las aguas cristalinas del Pacífico y Caribe.
+                  </p>
+                </div>
+
+                {/* Features Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {/* Feature 1 */}
+                  <div className="flex items-start gap-3">
+                    <div className="bg-green-600 text-white p-2 rounded-lg flex-shrink-0">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 mb-1">Temporada de Dorado</h4>
+                      <p className="text-sm text-gray-600">Mayo - Septiembre, capturas garantizadas</p>
+                    </div>
+                  </div>
+
+                  {/* Feature 2 */}
+                  <div className="flex items-start gap-3">
+                    <div className="bg-green-600 text-white p-2 rounded-lg flex-shrink-0">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 mb-1">Mejor Época del Año</h4>
+                      <p className="text-sm text-gray-600">Clima perfecto y mar tranquilo</p>
+                    </div>
+                  </div>
+
+                  {/* Feature 3 */}
+                  <div className="flex items-start gap-3">
+                    <div className="bg-green-600 text-white p-2 rounded-lg flex-shrink-0">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 mb-1">Precios Especiales</h4>
+                      <p className="text-sm text-gray-600">Descuentos hasta 20% en grupos</p>
+                    </div>
+                  </div>
+
+                  {/* Feature 4 */}
+                  <div className="flex items-start gap-3">
+                    <div className="bg-green-600 text-white p-2 rounded-lg flex-shrink-0">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 mb-1">Experiencia Premium</h4>
+                      <p className="text-sm text-gray-600">Equipo profesional incluido</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CTA Button */}
+                <div className="pt-4">
+                  <a
+                    href="#tours"
+                    className="inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white font-bold px-8 py-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                  >
+                    <span className="text-lg">VER OFERTAS ESPECIALES</span>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </a>
+                </div>
+
+                {/* Bottom Info */}
+                <div className="flex items-center gap-2 text-green-600 pt-4 border-t border-green-200">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-sm font-semibold">
+                    Descubre los mejores destinos de pesca en Costa Rica
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Tours Section */}
       <section id="tours" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {/* Section Title */}

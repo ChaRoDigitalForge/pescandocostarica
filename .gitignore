@@ -41,7 +41,11 @@ yarn-error.log*
 next-env.d.ts
 
 # backend pescando costa rica
-/backendpescandocostarica
+
 
 #Claude AI
 /.claude
+
+# Windows nul file artifacts
+nul
+**/nul
