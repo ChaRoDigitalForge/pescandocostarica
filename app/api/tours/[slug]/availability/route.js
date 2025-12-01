@@ -26,34 +26,58 @@ export async function GET(request, { params }) {
     const tourId = tours[0].id;
     const maxParticipants = tours[0].max_participants;
 
-    // Construir query de disponibilidad
-    let query = `
-      SELECT
-        booking_date,
-        SUM(participants) as total_booked
-      FROM bookings
-      WHERE tour_id = $1
-        AND status != 'cancelled'
-    `;
+    // Get availability using tagged template literals
+    let bookings;
 
-    const queryParams = [tourId];
-
-    if (startDate) {
-      query += ` AND booking_date >= $${queryParams.length + 1}`;
-      queryParams.push(startDate);
+    if (startDate && endDate) {
+      bookings = await sql`
+        SELECT
+          booking_date,
+          SUM(participants) as total_booked
+        FROM bookings
+        WHERE tour_id = ${tourId}
+          AND status != 'cancelled'
+          AND booking_date >= ${startDate}
+          AND booking_date <= ${endDate}
+        GROUP BY booking_date
+        ORDER BY booking_date ASC
+      `;
+    } else if (startDate) {
+      bookings = await sql`
+        SELECT
+          booking_date,
+          SUM(participants) as total_booked
+        FROM bookings
+        WHERE tour_id = ${tourId}
+          AND status != 'cancelled'
+          AND booking_date >= ${startDate}
+        GROUP BY booking_date
+        ORDER BY booking_date ASC
+      `;
+    } else if (endDate) {
+      bookings = await sql`
+        SELECT
+          booking_date,
+          SUM(participants) as total_booked
+        FROM bookings
+        WHERE tour_id = ${tourId}
+          AND status != 'cancelled'
+          AND booking_date <= ${endDate}
+        GROUP BY booking_date
+        ORDER BY booking_date ASC
+      `;
+    } else {
+      bookings = await sql`
+        SELECT
+          booking_date,
+          SUM(participants) as total_booked
+        FROM bookings
+        WHERE tour_id = ${tourId}
+          AND status != 'cancelled'
+        GROUP BY booking_date
+        ORDER BY booking_date ASC
+      `;
     }
-
-    if (endDate) {
-      query += ` AND booking_date <= $${queryParams.length + 1}`;
-      queryParams.push(endDate);
-    }
-
-    query += `
-      GROUP BY booking_date
-      ORDER BY booking_date ASC
-    `;
-
-    const bookings = await sql(query, queryParams);
 
     // Calcular disponibilidad
     const availability = bookings.map(booking => ({
