@@ -240,6 +240,10 @@ export const getTourBySlug = async (req, res, next) => {
       LEFT JOIN tour_services ts ON t.id = ts.tour_id
       LEFT JOIN tour_inclusions ti ON t.id = ti.tour_id
       LEFT JOIN tour_requirements tr ON t.id = tr.tour_id
+      LEFT JOIN tour_boats tb ON t.id = tb.tour_id
+      LEFT JOIN boats b ON tb.boat_id = b.id AND b.deleted_at IS NULL
+      LEFT JOIN tour_target_species tts ON t.id = tts.tour_id
+      LEFT JOIN fish_species fs ON tts.species_id = fs.id
       WHERE t.slug = $1 AND t.status = 'active' AND t.deleted_at IS NULL
       GROUP BY t.id, p.name, p.code, l.name, l.latitude, l.longitude, u.first_name, u.last_name, u.years_of_experience, u.avatar_url, u.bio
     `;
@@ -457,3 +461,4 @@ export const searchTours = async (req, res, next) => {
     next(error);
   }
 };
+
