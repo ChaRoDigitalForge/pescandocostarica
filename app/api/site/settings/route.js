@@ -62,10 +62,10 @@ export async function GET() {
 
     // Obtener provincias disponibles
     const provincias = await sql`
-      SELECT DISTINCT provincia
-      FROM tours
-      WHERE is_active = true AND provincia IS NOT NULL
-      ORDER BY provincia ASC
+      SELECT code, name
+      FROM provincias
+      WHERE is_active = true
+      ORDER BY name ASC
     `;
 
     return NextResponse.json({
@@ -76,7 +76,7 @@ export async function GET() {
         config,
         socialMedia,
         navigation,
-        provincias: provincias.map(p => p.provincia)
+        provincias
       }
     });
 

@@ -11,7 +11,7 @@ export async function GET(request, { params }) {
 
     // Obtener el tour_id por slug
     const tours = await sql`
-      SELECT id FROM tours WHERE slug = ${slug} LIMIT 1
+      SELECT id FROM tours WHERE slug = ${slug} AND deleted_at IS NULL LIMIT 1
     `;
 
     if (tours.length === 0) {

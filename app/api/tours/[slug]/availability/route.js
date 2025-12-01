@@ -10,7 +10,7 @@ export async function GET(request, { params }) {
 
     // Obtener el tour_id por slug
     const tours = await sql`
-      SELECT id, max_participants FROM tours WHERE slug = ${slug} LIMIT 1
+      SELECT id, capacity FROM tours WHERE slug = ${slug} AND deleted_at IS NULL LIMIT 1
     `;
 
     if (tours.length === 0) {
@@ -24,7 +24,7 @@ export async function GET(request, { params }) {
     }
 
     const tourId = tours[0].id;
-    const maxParticipants = tours[0].max_participants;
+    const maxParticipants = tours[0].capacity;
 
     // Get availability using tagged template literals
     let bookings;

@@ -32,9 +32,9 @@ export async function POST(request) {
 
     // Verificar que el tour existe y está activo
     const tours = await sql`
-      SELECT id, title, price, max_participants
+      SELECT id, title, price, capacity
       FROM tours
-      WHERE id = ${tour_id} AND is_active = true
+      WHERE id = ${tour_id} AND status = 'active' AND deleted_at IS NULL
     `;
 
     if (tours.length === 0) {
@@ -50,12 +50,12 @@ export async function POST(request) {
     const tour = tours[0];
 
     // Validar número de participantes
-    if (participants > tour.max_participants) {
+    if (participants > tour.capacity) {
       return NextResponse.json(
         {
           success: false,
           error: 'Número de participantes excede el máximo permitido',
-          message: `Máximo ${tour.max_participants} participantes`
+          message: `Máximo ${tour.capacity} participantes`
         },
         { status: 400 }
       );

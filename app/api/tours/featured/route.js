@@ -7,13 +7,9 @@ export async function GET(request) {
     const limit = parseInt(searchParams.get('limit') || '6');
 
     const tours = await sql`
-      SELECT
-        id, title, slug, description, short_description,
-        price, duration, category, provincia, location,
-        image_url, gallery_images, difficulty, max_participants,
-        is_active, is_featured, rating, reviews_count
-      FROM tours
-      WHERE is_active = true AND is_featured = true
+      SELECT *
+      FROM vw_tours_complete
+      WHERE status = 'active' AND is_featured = true
       ORDER BY created_at DESC
       LIMIT ${limit}
     `;

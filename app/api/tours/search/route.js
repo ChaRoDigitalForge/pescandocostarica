@@ -28,31 +28,25 @@ export async function GET(request) {
     const [{ total }] = await sql`
       SELECT COUNT(*) as total
       FROM tours
-      WHERE is_active = true
+      WHERE deleted_at IS NULL
+        AND status = 'active'
         AND (
           title ILIKE ${searchPattern}
           OR description ILIKE ${searchPattern}
           OR short_description ILIKE ${searchPattern}
-          OR location ILIKE ${searchPattern}
-          OR category ILIKE ${searchPattern}
         )
     `;
 
     // Obtener tours
     const tours = await sql`
-      SELECT
-        id, title, slug, description, short_description,
-        price, duration, category, provincia, location,
-        image_url, gallery_images, difficulty, max_participants,
-        is_active, is_featured, rating, reviews_count
-      FROM tours
-      WHERE is_active = true
+      SELECT *
+      FROM vw_tours_complete
+      WHERE status = 'active'
         AND (
           title ILIKE ${searchPattern}
           OR description ILIKE ${searchPattern}
           OR short_description ILIKE ${searchPattern}
-          OR location ILIKE ${searchPattern}
-          OR category ILIKE ${searchPattern}
+          OR location_name ILIKE ${searchPattern}
         )
       ORDER BY
         CASE
