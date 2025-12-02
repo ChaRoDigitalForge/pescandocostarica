@@ -22,6 +22,24 @@ export default function CaptainDashboard() {
   const [notifications, setNotifications] = useState([]);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState({});
+  const [showTourForm, setShowTourForm] = useState(false);
+  const [editingTourId, setEditingTourId] = useState(null);
+  const [viewingTour, setViewingTour] = useState(null);
+  const [tourFormData, setTourFormData] = useState({
+    title: '',
+    description: '',
+    short_description: '',
+    fishing_type: 'costera',
+    duration_hours: 4,
+    capacity: 4,
+    price: 300,
+    provincia_id: 1,
+    difficulty_level: 2,
+    inclusions: [],
+    requirements: []
+  });
+  const [newInclusion, setNewInclusion] = useState('');
+  const [newRequirement, setNewRequirement] = useState('');
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -215,6 +233,223 @@ export default function CaptainDashboard() {
       console.error('Error updating profile:', error);
       alert('Error al actualizar el perfil');
     }
+  };
+
+  const handleCreateTour = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+
+      const tourData = {
+        ...tourFormData,
+        inclusions: tourFormData.inclusions.map(inc => ({ description: inc, is_included: true })),
+        requirements: tourFormData.requirements.map(req => ({ requirement: req, is_mandatory: true }))
+      };
+
+      const url = editingTourId
+        ? `${process.env.NEXT_PUBLIC_API_URL}/captain/tours/${editingTourId}`
+        : `${process.env.NEXT_PUBLIC_API_URL}/captain/tours`;
+
+      const method = editingTourId ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(tourData)
+      });
+
+      if (response.ok) {
+        alert(editingTourId ? 'Tour actualizado exitosamente' : 'Tour creado exitosamente');
+        setShowTourForm(false);
+        setEditingTourId(null);
+        setTourFormData({
+          title: '',
+          description: '',
+          short_description: '',
+          fishing_type: 'costera',
+          duration_hours: 4,
+          capacity: 4,
+          price: 300,
+          provincia_id: 1,
+          difficulty_level: 2,
+          inclusions: [],
+          requirements: []
+        });
+        fetchDashboardData();
+      } else {
+        const errorData = await response.json();
+        alert(`Error al ${editingTourId ? 'actualizar' : 'crear'} el tour: ${errorData.message || 'Error desconocido'}`);
+      }
+    } catch (error) {
+      console.error('Error saving tour:', error);
+      alert('Error al guardar el tour');
+    }
+  };
+
+  const handleEditTour = async (tour) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/captain/tours/${tour.id}`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const tourData = data.data;
+
+        setTourFormData({
+          title: tourData.title || '',
+          description: tourData.description || '',
+          short_description: tourData.short_description || '',
+          fishing_type: tourData.fishing_type || 'costera',
+          duration_hours: tourData.duration_hours || 4,
+          capacity: tourData.capacity || 4,
+          price: tourData.price || 300,
+          provincia_id: tourData.provincia_id || 1,
+          difficulty_level: tourData.difficulty_level || 2,
+          inclusions: tourData.inclusions?.map(inc => inc.description) || [],
+          requirements: tourData.requirements?.map(req => req.requirement) || []
+        });
+
+        setEditingTourId(tour.id);
+        setShowTourForm(true);
+      }
+    } catch (error) {
+      console.error('Error loading tour:', error);
+      alert('Error al cargar el tour');
+    }
+  };
+
+  const handleDeleteTour = async (tourId) => {
+    if (!confirm('¿Estás seguro de que deseas eliminar este tour?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token');
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/captain/tours/${tourId}`,
+        {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      );
+
+      if (response.ok) {
+        alert('Tour eliminado exitosamente');
+        fetchDashboardData();
+      } else {
+        alert('Error al eliminar el tour');
+      }
+    } catch (error) {
+      console.error('Error deleting tour:', error);
+      alert('Error al eliminar el tour');
+    }
+  };
+
+  const handlePublishTour = async (tourId) => {
+    if (!confirm('¿Deseas publicar este tour? Será visible en la página principal.')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token');
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/captain/tours/${tourId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status: 'active' })
+        }
+      );
+
+      if (response.ok) {
+        alert('Tour publicado exitosamente');
+        fetchDashboardData();
+      } else {
+        alert('Error al publicar el tour');
+      }
+    } catch (error) {
+      console.error('Error publishing tour:', error);
+      alert('Error al publicar el tour');
+    }
+  };
+
+  const handleUnpublishTour = async (tourId) => {
+    if (!confirm('¿Deseas despublicar este tour? Ya no será visible en la página principal.')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token');
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/captain/tours/${tourId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status: 'draft' })
+        }
+      );
+
+      if (response.ok) {
+        alert('Tour despublicado exitosamente');
+        fetchDashboardData();
+      } else {
+        alert('Error al despublicar el tour');
+      }
+    } catch (error) {
+      console.error('Error unpublishing tour:', error);
+      alert('Error al despublicar el tour');
+    }
+  };
+
+  const addInclusion = () => {
+    if (newInclusion.trim()) {
+      setTourFormData({
+        ...tourFormData,
+        inclusions: [...tourFormData.inclusions, newInclusion.trim()]
+      });
+      setNewInclusion('');
+    }
+  };
+
+  const removeInclusion = (index) => {
+    setTourFormData({
+      ...tourFormData,
+      inclusions: tourFormData.inclusions.filter((_, i) => i !== index)
+    });
+  };
+
+  const addRequirement = () => {
+    if (newRequirement.trim()) {
+      setTourFormData({
+        ...tourFormData,
+        requirements: [...tourFormData.requirements, newRequirement.trim()]
+      });
+      setNewRequirement('');
+    }
+  };
+
+  const removeRequirement = (index) => {
+    setTourFormData({
+      ...tourFormData,
+      requirements: tourFormData.requirements.filter((_, i) => i !== index)
+    });
   };
 
   const getStatusBadge = (status) => {
@@ -1108,7 +1343,10 @@ export default function CaptainDashboard() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900">Mis Tours</h2>
-              <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">
+              <button
+                onClick={() => setShowTourForm(true)}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+              >
                 + Crear Nuevo Tour
               </button>
             </div>
@@ -1121,17 +1359,31 @@ export default function CaptainDashboard() {
                   </svg>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No tienes tours creados</h3>
                   <p className="text-gray-500 mb-4">Comienza creando tu primer tour de pesca</p>
-                  <button className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">
+                  <button
+                    onClick={() => setShowTourForm(true)}
+                    className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+                  >
                     Crear Tu Primer Tour
                   </button>
                 </div>
               ) : (
                 tours.map((tour) => (
                   <div key={tour.id} className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                    <div className="h-48 bg-gray-200">
+                    <div className="h-48 bg-gray-200 relative">
                       {tour.main_image_url && (
                         <img src={tour.main_image_url} alt={tour.title} className="w-full h-full object-cover" />
                       )}
+                      <div className="absolute top-4 right-4">
+                        {tour.status === 'active' ? (
+                          <span className="px-3 py-1 bg-green-600 text-white rounded-full text-xs font-semibold">
+                            Publicado
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 bg-yellow-600 text-white rounded-full text-xs font-semibold">
+                            Borrador
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="p-6">
                       <h3 className="text-lg font-bold text-gray-900 mb-2">{tour.title}</h3>
@@ -1158,13 +1410,44 @@ export default function CaptainDashboard() {
                         </div>
                       </div>
 
-                      <div className="flex gap-2">
-                        <button className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors">
-                          Editar
-                        </button>
-                        <button className="px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors">
-                          Ver
-                        </button>
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditTour(tour)}
+                            className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => setViewingTour(tour)}
+                            className="px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors"
+                          >
+                            Ver
+                          </button>
+                        </div>
+                        <div className="flex gap-2">
+                          {tour.status === 'draft' ? (
+                            <button
+                              onClick={() => handlePublishTour(tour.id)}
+                              className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                            >
+                              Publicar
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleUnpublishTour(tour.id)}
+                              className="flex-1 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-sm font-medium transition-colors"
+                            >
+                              Despublicar
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDeleteTour(tour.id)}
+                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1340,6 +1623,359 @@ export default function CaptainDashboard() {
           </div>
         )}
       </div>
+
+      {/* Modal de Ver Tour */}
+      {viewingTour && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-gray-900">Detalles del Tour</h3>
+              <button
+                onClick={() => setViewingTour(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">{viewingTour.title}</h4>
+                <div className="space-y-3">
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">Estado: </span>
+                    {viewingTour.status === 'active' ? (
+                      <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
+                        Publicado
+                      </span>
+                    ) : (
+                      <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
+                        Borrador
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">Descripción Corta: </span>
+                    <p className="text-sm text-gray-600 mt-1">{viewingTour.short_description}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">Descripción Completa: </span>
+                    <p className="text-sm text-gray-600 mt-1">{viewingTour.description}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Tipo de Pesca: </span>
+                      <p className="text-sm text-gray-600">{viewingTour.fishing_type}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Duración: </span>
+                      <p className="text-sm text-gray-600">{viewingTour.duration_display}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Capacidad: </span>
+                      <p className="text-sm text-gray-600">{viewingTour.capacity} personas</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Precio: </span>
+                      <p className="text-sm text-gray-600">${viewingTour.price}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Dificultad: </span>
+                      <p className="text-sm text-gray-600">Nivel {viewingTour.difficulty_level}</p>
+                    </div>
+                  </div>
+                  {viewingTour.inclusions && viewingTour.inclusions.length > 0 && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Inclusiones: </span>
+                      <ul className="list-disc list-inside mt-2 text-sm text-gray-600">
+                        {viewingTour.inclusions.map((inc, idx) => (
+                          <li key={idx}>{inc.description}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {viewingTour.requirements && viewingTour.requirements.length > 0 && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Requisitos: </span>
+                      <ul className="list-disc list-inside mt-2 text-sm text-gray-600">
+                        {viewingTour.requirements.map((req, idx) => (
+                          <li key={idx}>{req.requirement}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => setViewingTour(null)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cerrar
+                </button>
+                <button
+                  onClick={() => {
+                    handleEditTour(viewingTour);
+                    setViewingTour(null);
+                  }}
+                  className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  Editar Tour
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Creación/Edición de Tour */}
+      {showTourForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-gray-900">
+                {editingTourId ? 'Editar Tour' : 'Crear Nuevo Tour'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowTourForm(false);
+                  setEditingTourId(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Información Básica */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Información Básica</h4>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Título del Tour</label>
+                    <input
+                      type="text"
+                      value={tourFormData.title}
+                      onChange={(e) => setTourFormData({ ...tourFormData, title: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      placeholder="Ej: Pesca Deportiva en Alta Mar"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Descripción Corta</label>
+                    <input
+                      type="text"
+                      value={tourFormData.short_description}
+                      onChange={(e) => setTourFormData({ ...tourFormData, short_description: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      placeholder="Breve descripción del tour"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Descripción Completa</label>
+                    <textarea
+                      value={tourFormData.description}
+                      onChange={(e) => setTourFormData({ ...tourFormData, description: e.target.value })}
+                      rows={4}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      placeholder="Describe los detalles del tour..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Pesca</label>
+                      <select
+                        value={tourFormData.fishing_type}
+                        onChange={(e) => setTourFormData({ ...tourFormData, fishing_type: e.target.value })}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      >
+                        <option value="altaMar">Alta Mar</option>
+                        <option value="costera">Costera</option>
+                        <option value="rio">Río</option>
+                        <option value="lago">Lago</option>
+                        <option value="manglar">Manglar</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Provincia</label>
+                      <select
+                        value={tourFormData.provincia_id}
+                        onChange={(e) => setTourFormData({ ...tourFormData, provincia_id: parseInt(e.target.value) })}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      >
+                        <option value="1">Guanacaste</option>
+                        <option value="2">Puntarenas</option>
+                        <option value="3">Limón</option>
+                        <option value="4">San José</option>
+                        <option value="5">Alajuela</option>
+                        <option value="6">Cartago</option>
+                        <option value="7">Heredia</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Duración (horas)</label>
+                      <input
+                        type="number"
+                        value={tourFormData.duration_hours}
+                        onChange={(e) => setTourFormData({ ...tourFormData, duration_hours: parseFloat(e.target.value) })}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                        min="1"
+                        step="0.5"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Capacidad (personas)</label>
+                      <input
+                        type="number"
+                        value={tourFormData.capacity}
+                        onChange={(e) => setTourFormData({ ...tourFormData, capacity: parseInt(e.target.value) })}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                        min="1"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Precio ($)</label>
+                      <input
+                        type="number"
+                        value={tourFormData.price}
+                        onChange={(e) => setTourFormData({ ...tourFormData, price: parseFloat(e.target.value) })}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                        min="0"
+                        step="10"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Nivel de Dificultad</label>
+                    <select
+                      value={tourFormData.difficulty_level}
+                      onChange={(e) => setTourFormData({ ...tourFormData, difficulty_level: parseInt(e.target.value) })}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="1">1 - Muy Fácil</option>
+                      <option value="2">2 - Fácil</option>
+                      <option value="3">3 - Moderado</option>
+                      <option value="4">4 - Difícil</option>
+                      <option value="5">5 - Muy Difícil</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Inclusiones */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">¿Qué Incluye?</h4>
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newInclusion}
+                      onChange={(e) => setNewInclusion(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && addInclusion()}
+                      className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      placeholder="Ej: Equipo de pesca completo"
+                    />
+                    <button
+                      onClick={addInclusion}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                    >
+                      Agregar
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {tourFormData.inclusions.map((inclusion, index) => (
+                      <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2">
+                        <span className="text-sm text-gray-700">{inclusion}</span>
+                        <button
+                          onClick={() => removeInclusion(index)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Requisitos */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Requisitos</h4>
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newRequirement}
+                      onChange={(e) => setNewRequirement(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && addRequirement()}
+                      className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      placeholder="Ej: Edad mínima 12 años"
+                    />
+                    <button
+                      onClick={addRequirement}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                    >
+                      Agregar
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {tourFormData.requirements.map((requirement, index) => (
+                      <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2">
+                        <span className="text-sm text-gray-700">{requirement}</span>
+                        <button
+                          onClick={() => removeRequirement(index)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Botones de Acción */}
+              <div className="flex gap-3 pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    setShowTourForm(false);
+                    setEditingTourId(null);
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleCreateTour}
+                  className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  {editingTourId ? 'Guardar Cambios' : 'Crear Tour'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
