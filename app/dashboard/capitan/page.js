@@ -8,6 +8,11 @@ import SimpleBarChart from '@/components/dashboard/SimpleBarChart';
 import SimplePieChart from '@/components/dashboard/SimplePieChart';
 import CalendarView from '@/components/dashboard/CalendarView';
 import NotificationCenter from '@/components/dashboard/NotificationCenter';
+import BoatsManager from '@/components/dashboard/BoatsManager';
+import TourSpeciesSelector from '@/components/dashboard/TourSpeciesSelector';
+import TourFishingStylesSelector from '@/components/dashboard/TourFishingStylesSelector';
+import ImageUploader from '@/components/dashboard/ImageUploader';
+import { getCountries, getZonesByCountry } from '@/lib/api';
 
 export default function CaptainDashboard() {
   const { user, isAuthenticated, isCapitan, loading: authLoading, logout } = useAuth();
@@ -29,17 +34,28 @@ export default function CaptainDashboard() {
     title: '',
     description: '',
     short_description: '',
-    fishing_type: 'costera',
     duration_hours: 4,
     capacity: 4,
     price: 300,
-    provincia_id: 1,
-    difficulty_level: 2,
+    country_id: 1, // Costa Rica by default
+    zone_id: null,
+    fishing_zone_id: null,
+    boat_id: null,
+    main_image_url: '',
+    image_gallery: [],
     inclusions: [],
-    requirements: []
+    services: [],
+    exclusions: [],
+    target_species: [],
+    fishing_styles: [],
+    media: []
   });
+  const [countries, setCountries] = useState([]);
+  const [zones, setZones] = useState([]);
   const [newInclusion, setNewInclusion] = useState('');
-  const [newRequirement, setNewRequirement] = useState('');
+  const [newService, setNewService] = useState({ service_type: 'equipo', name: '', description: '', cost: '' });
+  const [newExclusion, setNewExclusion] = useState('');
+  const [boats, setBoats] = useState([]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -82,6 +98,40 @@ export default function CaptainDashboard() {
     }
   }, [user]);
 
+  // Load countries on mount
+  useEffect(() => {
+    loadCountries();
+  }, []);
+
+  // Load zones when country changes
+  useEffect(() => {
+    if (tourFormData.country_id) {
+      loadZones(tourFormData.country_id);
+    }
+  }, [tourFormData.country_id]);
+
+  const loadCountries = async () => {
+    try {
+      const response = await getCountries(true);
+      if (response.success) {
+        setCountries(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading countries:', error);
+    }
+  };
+
+  const loadZones = async (countryId) => {
+    try {
+      const response = await getZonesByCountry(countryId, { popularOnly: false, activeOnly: true });
+      if (response.success) {
+        setZones(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading zones:', error);
+    }
+  };
+
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
@@ -89,7 +139,7 @@ export default function CaptainDashboard() {
       console.log('🔑 Token exists:', !!token);
       console.log('🌐 API URL:', process.env.NEXT_PUBLIC_API_URL);
 
-      const [statsResponse, bookingsResponse, toursResponse] = await Promise.all([
+      const [statsResponse, bookingsResponse, toursResponse, boatsResponse] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/captain/statistics`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
@@ -97,6 +147,9 @@ export default function CaptainDashboard() {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/captain/tours`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/captain/boats`, {
           headers: { 'Authorization': `Bearer ${token}` }
         })
       ]);
@@ -130,6 +183,15 @@ export default function CaptainDashboard() {
       } else {
         const errorData = await toursResponse.json();
         console.error('❌ Tours Error:', errorData);
+      }
+
+      if (boatsResponse.ok) {
+        const boatsData = await boatsResponse.json();
+        console.log('✅ Boats Data:', boatsData);
+        setBoats(boatsData.data || []);
+      } else {
+        const errorData = await boatsResponse.json();
+        console.error('❌ Boats Error:', errorData);
       }
     } catch (error) {
       console.error('💥 Error fetching dashboard data:', error);
@@ -242,7 +304,10 @@ export default function CaptainDashboard() {
       const tourData = {
         ...tourFormData,
         inclusions: tourFormData.inclusions.map(inc => ({ description: inc, is_included: true })),
-        requirements: tourFormData.requirements.map(req => ({ requirement: req, is_mandatory: true }))
+        services: tourFormData.services || [],
+        exclusions: tourFormData.exclusions || [],
+        target_species: tourFormData.target_species || [],
+        fishing_styles: tourFormData.fishing_styles || []
       };
 
       const url = editingTourId
@@ -268,14 +333,21 @@ export default function CaptainDashboard() {
           title: '',
           description: '',
           short_description: '',
-          fishing_type: 'costera',
           duration_hours: 4,
           capacity: 4,
           price: 300,
-          provincia_id: 1,
-          difficulty_level: 2,
+          country_id: 1,
+          zone_id: null,
+          fishing_zone_id: null,
+          boat_id: null,
+          main_image_url: '',
+          image_gallery: [],
           inclusions: [],
-          requirements: []
+          services: [],
+          exclusions: [],
+          target_species: [],
+          fishing_styles: [],
+          media: []
         });
         fetchDashboardData();
       } else {
@@ -307,14 +379,20 @@ export default function CaptainDashboard() {
           title: tourData.title || '',
           description: tourData.description || '',
           short_description: tourData.short_description || '',
-          fishing_type: tourData.fishing_type || 'costera',
           duration_hours: tourData.duration_hours || 4,
           capacity: tourData.capacity || 4,
           price: tourData.price || 300,
-          provincia_id: tourData.provincia_id || 1,
-          difficulty_level: tourData.difficulty_level || 2,
+          country_id: tourData.country_id || 1,
+          zone_id: tourData.zone_id || null,
+          boat_id: tourData.boat_id || null,
+          main_image_url: tourData.main_image_url || '',
+          image_gallery: tourData.image_gallery || [],
           inclusions: tourData.inclusions?.map(inc => inc.description) || [],
-          requirements: tourData.requirements?.map(req => req.requirement) || []
+          services: tourData.services || [],
+          exclusions: tourData.exclusions || [],
+          target_species: tourData.target_species || [],
+          fishing_styles: tourData.fishing_styles || [],
+          media: tourData.media || []
         });
 
         setEditingTourId(tour.id);
@@ -435,20 +513,44 @@ export default function CaptainDashboard() {
     });
   };
 
-  const addRequirement = () => {
-    if (newRequirement.trim()) {
+
+  const addService = () => {
+    if (newService.name.trim()) {
       setTourFormData({
         ...tourFormData,
-        requirements: [...tourFormData.requirements, newRequirement.trim()]
+        services: [...tourFormData.services, {
+          service_type: newService.service_type || 'equipo',
+          name: newService.name.trim(),
+          description: newService.description.trim(),
+          is_included: false,
+          additional_cost: parseFloat(newService.cost) || 0
+        }]
       });
-      setNewRequirement('');
+      setNewService({ service_type: 'equipo', name: '', description: '', cost: '' });
     }
   };
 
-  const removeRequirement = (index) => {
+  const removeService = (index) => {
     setTourFormData({
       ...tourFormData,
-      requirements: tourFormData.requirements.filter((_, i) => i !== index)
+      services: tourFormData.services.filter((_, i) => i !== index)
+    });
+  };
+
+  const addExclusion = () => {
+    if (newExclusion.trim()) {
+      setTourFormData({
+        ...tourFormData,
+        exclusions: [...tourFormData.exclusions, newExclusion.trim()]
+      });
+      setNewExclusion('');
+    }
+  };
+
+  const removeExclusion = (index) => {
+    setTourFormData({
+      ...tourFormData,
+      exclusions: tourFormData.exclusions.filter((_, i) => i !== index)
     });
   };
 
@@ -580,6 +682,7 @@ export default function CaptainDashboard() {
               { id: 'bookings', label: 'Reservas', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
               { id: 'calendar', label: 'Calendario', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
               { id: 'tours', label: 'Mis Tours', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
+              { id: 'boats', label: 'Embarcaciones', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
               { id: 'profile', label: 'Perfil', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' }
             ].map((tab) => (
               <button
@@ -1457,6 +1560,13 @@ export default function CaptainDashboard() {
           </div>
         )}
 
+        {/* Boats Tab */}
+        {activeTab === 'boats' && (
+          <div className="space-y-6">
+            <BoatsManager onBoatCreated={fetchDashboardData} />
+          </div>
+        )}
+
         {/* Profile Tab */}
         {activeTab === 'profile' && (
           <div className="space-y-6">
@@ -1666,10 +1776,6 @@ export default function CaptainDashboard() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <span className="text-sm font-medium text-gray-700">Tipo de Pesca: </span>
-                      <p className="text-sm text-gray-600">{viewingTour.fishing_type}</p>
-                    </div>
-                    <div>
                       <span className="text-sm font-medium text-gray-700">Duración: </span>
                       <p className="text-sm text-gray-600">{viewingTour.duration_display}</p>
                     </div>
@@ -1680,10 +1786,6 @@ export default function CaptainDashboard() {
                     <div>
                       <span className="text-sm font-medium text-gray-700">Precio: </span>
                       <p className="text-sm text-gray-600">${viewingTour.price}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Dificultad: </span>
-                      <p className="text-sm text-gray-600">Nivel {viewingTour.difficulty_level}</p>
                     </div>
                   </div>
                   {viewingTour.inclusions && viewingTour.inclusions.length > 0 && (
@@ -1792,36 +1894,58 @@ export default function CaptainDashboard() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Pesca</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">País</label>
                       <select
-                        value={tourFormData.fishing_type}
-                        onChange={(e) => setTourFormData({ ...tourFormData, fishing_type: e.target.value })}
+                        value={tourFormData.country_id}
+                        onChange={(e) => setTourFormData({ ...tourFormData, country_id: parseInt(e.target.value), zone_id: null })}
                         className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                        required
                       >
-                        <option value="altaMar">Alta Mar</option>
-                        <option value="costera">Costera</option>
-                        <option value="rio">Río</option>
-                        <option value="lago">Lago</option>
-                        <option value="manglar">Manglar</option>
+                        <option value="">Seleccionar país...</option>
+                        {countries.map((country) => (
+                          <option key={country.id} value={country.id}>
+                            {country.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Provincia</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Zona de Pesca</label>
                       <select
-                        value={tourFormData.provincia_id}
-                        onChange={(e) => setTourFormData({ ...tourFormData, provincia_id: parseInt(e.target.value) })}
+                        value={tourFormData.zone_id || ''}
+                        onChange={(e) => setTourFormData({ ...tourFormData, zone_id: e.target.value ? parseInt(e.target.value) : null })}
                         className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                        disabled={!tourFormData.country_id || zones.length === 0}
                       >
-                        <option value="1">Guanacaste</option>
-                        <option value="2">Puntarenas</option>
-                        <option value="3">Limón</option>
-                        <option value="4">San José</option>
-                        <option value="5">Alajuela</option>
-                        <option value="6">Cartago</option>
-                        <option value="7">Heredia</option>
+                        <option value="">Seleccionar zona...</option>
+                        {zones.map((zone) => (
+                          <option key={zone.id} value={zone.id}>
+                            {zone.name} {zone.is_popular && '⭐'}
+                          </option>
+                        ))}
                       </select>
+                      {zones.length === 0 && tourFormData.country_id && (
+                        <p className="text-xs text-gray-500 mt-1">No hay zonas disponibles para este país</p>
+                      )}
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Zona de Pesca</label>
+                    <select
+                      value={tourFormData.fishing_zone_id || ''}
+                      onChange={(e) => setTourFormData({ ...tourFormData, fishing_zone_id: e.target.value ? parseInt(e.target.value) : null })}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="">Seleccionar tipo de zona...</option>
+                      <option value="1">Río</option>
+                      <option value="2">Lago</option>
+                      <option value="3">Costera</option>
+                      <option value="4">Altamar</option>
+                      <option value="5">Estero</option>
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Tipo de ambiente acuático donde se realiza la pesca</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1861,20 +1985,6 @@ export default function CaptainDashboard() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Nivel de Dificultad</label>
-                    <select
-                      value={tourFormData.difficulty_level}
-                      onChange={(e) => setTourFormData({ ...tourFormData, difficulty_level: parseInt(e.target.value) })}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                    >
-                      <option value="1">1 - Muy Fácil</option>
-                      <option value="2">2 - Fácil</option>
-                      <option value="3">3 - Moderado</option>
-                      <option value="4">4 - Difícil</option>
-                      <option value="5">5 - Muy Difícil</option>
-                    </select>
-                  </div>
                 </div>
               </div>
 
@@ -1916,32 +2026,173 @@ export default function CaptainDashboard() {
                 </div>
               </div>
 
-              {/* Requisitos */}
+
+              {/* Imagen Principal */}
               <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">Requisitos</h4>
+                <ImageUploader
+                  mode="single"
+                  label="Imagen Principal del Tour"
+                  value={tourFormData.main_image_url}
+                  onChange={(url) => setTourFormData({ ...tourFormData, main_image_url: url })}
+                  maxSize={10}
+                />
+              </div>
+
+              {/* Selector de Embarcación */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Embarcación</h4>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Embarcación (Opcional)</label>
+                    <select
+                      value={tourFormData.boat_id || ''}
+                      onChange={(e) => setTourFormData({ ...tourFormData, boat_id: e.target.value ? parseInt(e.target.value) : null })}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="">Sin embarcación asignada</option>
+                      {boats.map((boat) => (
+                        <option key={boat.id} value={boat.id}>
+                          {boat.name} {boat.boat_type ? `(${boat.boat_type})` : ''} {boat.capacity ? `- ${boat.capacity} personas` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    {boats.length === 0 && (
+                      <p className="text-sm text-gray-500 mt-2">
+                        No tienes embarcaciones registradas. <button onClick={() => setActiveTab('boats')} className="text-green-600 hover:underline">Ir a Embarcaciones</button>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Galería de Imágenes */}
+              <div>
+                <ImageUploader
+                  mode="multiple"
+                  label="Galería de Imágenes del Tour"
+                  value={tourFormData.image_gallery}
+                  onChange={(urls) => setTourFormData({ ...tourFormData, image_gallery: urls })}
+                  maxSize={10}
+                  maxFiles={20}
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Sube hasta 20 imágenes adicionales para mostrar en la galería del tour
+                </p>
+              </div>
+
+              {/* Especies Objetivo */}
+              <div>
+                <TourSpeciesSelector
+                  selectedSpecies={tourFormData.target_species}
+                  onChange={(species) => setTourFormData({ ...tourFormData, target_species: species })}
+                />
+              </div>
+
+              {/* Estilos de Pesca */}
+              <div>
+                <TourFishingStylesSelector
+                  selectedStyles={tourFormData.fishing_styles}
+                  onChange={(styles) => setTourFormData({ ...tourFormData, fishing_styles: styles })}
+                />
+              </div>
+
+              {/* Servicios Adicionales */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Servicios Adicionales</h4>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <select
+                      value={newService.service_type}
+                      onChange={(e) => setNewService({ ...newService, service_type: e.target.value })}
+                      className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="pesca">Pesca</option>
+                      <option value="hospedaje">Hospedaje</option>
+                      <option value="transporte">Transporte</option>
+                      <option value="equipo">Equipo</option>
+                      <option value="alimentacion">Alimentación</option>
+                      <option value="guia">Guía</option>
+                    </select>
+                    <input
+                      type="text"
+                      value={newService.name}
+                      onChange={(e) => setNewService({ ...newService, name: e.target.value })}
+                      className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      placeholder="Nombre del servicio"
+                    />
+                    <input
+                      type="text"
+                      value={newService.description}
+                      onChange={(e) => setNewService({ ...newService, description: e.target.value })}
+                      className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      placeholder="Descripción"
+                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={newService.cost}
+                        onChange={(e) => setNewService({ ...newService, cost: e.target.value })}
+                        className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                        placeholder="Costo ($)"
+                        min="0"
+                      />
+                      <button
+                        onClick={addService}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {tourFormData.services.map((service, index) => (
+                      <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
+                        <div className="flex-grow">
+                          <span className="text-sm font-medium text-gray-900">{service.name}</span>
+                          {service.description && <p className="text-xs text-gray-600">{service.description}</p>}
+                          <p className="text-xs text-green-600 font-medium mt-1">+${service.additional_cost}</p>
+                        </div>
+                        <button
+                          onClick={() => removeService(index)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500">Servicios extra que el cliente puede agregar por un costo adicional</p>
+                </div>
+              </div>
+
+              {/* Exclusiones */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Exclusiones (Qué NO Incluye)</h4>
                 <div className="space-y-3">
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      value={newRequirement}
-                      onChange={(e) => setNewRequirement(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && addRequirement()}
+                      value={newExclusion}
+                      onChange={(e) => setNewExclusion(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && addExclusion()}
                       className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                      placeholder="Ej: Edad mínima 12 años"
+                      placeholder="Ej: Transporte al puerto"
                     />
                     <button
-                      onClick={addRequirement}
-                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                      onClick={addExclusion}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
                     >
                       Agregar
                     </button>
                   </div>
                   <div className="space-y-2">
-                    {tourFormData.requirements.map((requirement, index) => (
-                      <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2">
-                        <span className="text-sm text-gray-700">{requirement}</span>
+                    {tourFormData.exclusions.map((exclusion, index) => (
+                      <div key={index} className="flex items-center justify-between bg-red-50 rounded-lg px-4 py-2">
+                        <span className="text-sm text-gray-700">{exclusion}</span>
                         <button
-                          onClick={() => removeRequirement(index)}
+                          onClick={() => removeExclusion(index)}
                           className="text-red-500 hover:text-red-700"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

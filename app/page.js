@@ -113,7 +113,7 @@ export default function Home() {
       try {
         const response = await getSiteSettings();
         if (response.success && response.data) {
-          const { heroSlides, features, config, socialMedia, navigation, provincias } = response.data;
+          const { heroSlides, features, config, socialMedia, navigation, fishingZones } = response.data;
 
           // Solo actualizar si tenemos datos desde la API
           if (heroSlides && heroSlides.length > 0) {
@@ -142,13 +142,13 @@ export default function Home() {
             setNavigation(navigation);
           }
 
-          // Crear filtros de provincias dinámicamente
-          if (provincias && provincias.length > 0) {
-            const provinciaFilters = provincias.map(p => ({
-              id: p.code,
-              label: p.name
+          // Crear filtros de zonas de pesca dinámicamente
+          if (fishingZones && fishingZones.length > 0) {
+            const zoneFilters = fishingZones.map(z => ({
+              id: z.id,
+              label: z.name
             }));
-            setFilters([{ id: 'all', label: 'Todas' }, ...provinciaFilters]);
+            setFilters([{ id: 'all', label: 'Todas' }, ...zoneFilters]);
           }
         }
       } catch (error) {
@@ -170,7 +170,7 @@ export default function Home() {
         };
 
         if (activeFilter !== 'all') {
-          filters.provincia = activeFilter;
+          filters.fishing_zone_id = activeFilter;
         }
 
         const response = await getTours(filters);
@@ -429,14 +429,12 @@ export default function Home() {
                     onChange={(e) => setSearchDestino(e.target.value)}
                     className="w-full bg-gray-700/50 text-white border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 cursor-pointer"
                   >
-                    <option value="">Todas las provincias</option>
-                    <option value="guanacaste">Guanacaste</option>
-                    <option value="puntarenas">Puntarenas</option>
-                    <option value="limon">Limón</option>
-                    <option value="sanJose">San José</option>
-                    <option value="alajuela">Alajuela</option>
-                    <option value="cartago">Cartago</option>
-                    <option value="heredia">Heredia</option>
+                    <option value="">Todas las zonas</option>
+                    <option value="rio">Río</option>
+                    <option value="lago">Lago</option>
+                    <option value="costera">Costera</option>
+                    <option value="altamar">Altamar</option>
+                    <option value="estero">Estero</option>
                   </select>
                 </div>
 
@@ -765,7 +763,7 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    <span className="truncate">{tour.location_name}, {tour.provincia_name}</span>
+                    <span className="truncate">{tour.location_name}, {tour.fishing_zone_name}</span>
                   </div>
 
                   {/* Title */}
@@ -826,7 +824,7 @@ export default function Home() {
           <div className="text-center py-20">
             <div className="text-6xl mb-4">🎣</div>
             <h3 className="text-2xl font-bold text-gray-900 mb-2">No se encontraron tours</h3>
-            <p className="text-gray-600">Intenta con otro filtro o provincia</p>
+            <p className="text-gray-600">Intenta con otro filtro o zona de pesca</p>
           </div>
         )}
 

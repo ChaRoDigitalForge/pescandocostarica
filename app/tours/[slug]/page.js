@@ -166,7 +166,7 @@ export default function TourDetail() {
       try {
         await navigator.share({
           title: tour.title,
-          text: `Ubicación: ${tour.location_name}, ${tour.provincia_name}`,
+          text: `Ubicación: ${tour.location_name}, ${tour.fishing_zone_name}`,
           url: window.location.href
         });
       } catch (error) {
@@ -301,7 +301,7 @@ export default function TourDetail() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      <span>{tour.location_name ? `${tour.location_name}, ` : ''}{tour.provincia_name}</span>
+                      <span>{tour.location_name ? `${tour.location_name}, ` : ''}{tour.fishing_zone_name}</span>
                     </div>
                     <button
                       onClick={openInGoogleMaps}
@@ -505,7 +505,7 @@ export default function TourDetail() {
                           style={{ border: 0 }}
                           loading="lazy"
                           src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(
-                            tour.location_name ? `${tour.location_name}, Costa Rica` : `${tour.provincia_name}, Costa Rica`
+                            tour.location_name ? `${tour.location_name}, Costa Rica` : `${tour.fishing_zone_name}, Costa Rica`
                           )}`}
                         />
                       ) : (
@@ -516,7 +516,7 @@ export default function TourDetail() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
                             <p className="text-gray-600 text-sm">
-                              {tour.location_name ? `${tour.location_name}, ` : ''}{tour.provincia_name}, Costa Rica
+                              {tour.location_name ? `${tour.location_name}, ` : ''}{tour.fishing_zone_name}, Costa Rica
                             </p>
                             <p className="text-gray-400 text-xs mt-2">
                               Configura GOOGLE_MAPS_API_KEY para ver el mapa
