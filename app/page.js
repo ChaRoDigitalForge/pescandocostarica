@@ -1,13 +1,22 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getTours, getSiteSettings } from '@/lib/api';
-import UserMenu from '@/components/UserMenu';
+import { useGsapAnimations, fadeInUp, fadeInLeft, fadeInRight, scaleIn } from '@/hooks/useGsapAnimations';
 
 export default function Home() {
+  // Referencias para animaciones GSAP
+  const heroContentRef = useRef(null);
+  const featuresRef = useRef(null);
+  const promoRef = useRef(null);
+  const toursGridRef = useRef(null);
+  const ctaRef = useRef(null);
+
+  // Inicializar GSAP
+  useGsapAnimations();
+
   const [activeFilter, setActiveFilter] = useState('all');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [tours, setTours] = useState([]);
@@ -40,6 +49,13 @@ export default function Home() {
       title: 'ALTA MAR Y',
       subtitle: 'PESCA COSTERA',
       description: 'Vive la emoción de la pesca en alta mar o disfruta de la tranquilidad de la pesca costera'
+    },
+    {
+      id: 4,
+      image: '/dos-hombres-en-el-bote.jpg',
+      title: 'Los mejores',
+      subtitle: 'asda',
+      description: 'asdas'
     }
   ]);
   const [features, setFeatures] = useState([
@@ -66,40 +82,6 @@ export default function Home() {
     whatsapp_message: 'Hola! Estoy interesado en los tours de pesca',
     footer_text: '© 2025 Pescando Costa Rica. Todos los derechos reservados.'
   });
-  const [socialMedia, setSocialMedia] = useState([
-    {
-      id: 1,
-      platform: 'twitter',
-      url: 'https://twitter.com',
-      icon_svg: 'M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z'
-    },
-    {
-      id: 2,
-      platform: 'facebook',
-      url: 'https://facebook.com',
-      icon_svg: 'M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z'
-    },
-    {
-      id: 3,
-      platform: 'instagram',
-      url: 'https://instagram.com',
-      icon_svg: 'M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z'
-    },
-    {
-      id: 4,
-      platform: 'linkedin',
-      url: 'https://linkedin.com',
-      icon_svg: 'M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z'
-    }
-  ]);
-  const [navigation, setNavigation] = useState([
-    { id: 1, label: 'Home', url: '/' },
-    { id: 2, label: 'Nosotros', url: '/about' },
-    { id: 3, label: 'Tours', url: '/tours' },
-    { id: 4, label: 'Destinos', url: '/destinations' },
-    { id: 5, label: 'Blog', url: '/blog' },
-    { id: 6, label: 'Contacto', url: '/contact' }
-  ]);
 
   // Estados para el filtro de búsqueda
   const [searchDestino, setSearchDestino] = useState('');
@@ -113,7 +95,7 @@ export default function Home() {
       try {
         const response = await getSiteSettings();
         if (response.success && response.data) {
-          const { heroSlides, features, config, socialMedia, navigation, provincias } = response.data;
+          const { heroSlides, features, config, provincias } = response.data;
 
           // Solo actualizar si tenemos datos desde la API
           if (heroSlides && heroSlides.length > 0) {
@@ -132,14 +114,6 @@ export default function Home() {
 
           if (config && Object.keys(config).length > 0) {
             setSiteConfig(config);
-          }
-
-          if (socialMedia && socialMedia.length > 0) {
-            setSocialMedia(socialMedia);
-          }
-
-          if (navigation && navigation.length > 0) {
-            setNavigation(navigation);
           }
 
           // Crear filtros de provincias dinámicamente
@@ -193,6 +167,87 @@ export default function Home() {
     fetchTours();
   }, [activeFilter, currentPage]);
 
+  // Animaciones GSAP
+  useEffect(() => {
+    // Animación del hero cuando cambia el slide
+    if (heroContentRef.current) {
+      const heroElements = heroContentRef.current.querySelectorAll('.hero-animate');
+      fadeInUp(heroElements, {
+        duration: 0.8,
+        stagger: 0.15,
+        delay: 0.3
+      });
+    }
+  }, [currentSlide]);
+
+  useEffect(() => {
+    // Animaciones con scroll trigger
+
+    // Features section
+    if (featuresRef.current) {
+      const featureCards = featuresRef.current.querySelectorAll('.feature-card');
+      scaleIn(featureCards, {
+        stagger: 0.2,
+        scrollTrigger: {
+          trigger: featuresRef.current,
+          start: 'top 80%'
+        }
+      });
+    }
+
+    // Promotional section
+    if (promoRef.current) {
+      const promoLeft = promoRef.current.querySelector('.promo-left');
+      const promoRight = promoRef.current.querySelector('.promo-right');
+
+      if (promoLeft) {
+        fadeInLeft(promoLeft, {
+          duration: 1,
+          scrollTrigger: {
+            trigger: promoRef.current,
+            start: 'top 70%'
+          }
+        });
+      }
+
+      if (promoRight) {
+        fadeInRight(promoRight, {
+          duration: 1,
+          scrollTrigger: {
+            trigger: promoRef.current,
+            start: 'top 70%'
+          }
+        });
+      }
+    }
+
+    // CTA section
+    if (ctaRef.current) {
+      fadeInUp(ctaRef.current.children, {
+        stagger: 0.2,
+        scrollTrigger: {
+          trigger: ctaRef.current,
+          start: 'top 80%'
+        }
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    // Animar tour cards cuando se cargan
+    if (!loading && toursGridRef.current) {
+      const tourCards = toursGridRef.current.querySelectorAll('.tour-card');
+      fadeInUp(tourCards, {
+        stagger: 0.1,
+        duration: 0.6,
+        scrollTrigger: {
+          trigger: toursGridRef.current,
+          start: 'top 80%'
+        }
+      });
+    }
+  }, [tours, loading]);
+
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % slides.length);
   };
@@ -213,113 +268,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top Bar */}
-      <div className="bg-green-600 text-white py-2">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center text-sm">
-          {/* Social Media Icons */}
-          <div className="flex items-center gap-3">
-            {socialMedia.map((social) => (
-              <a
-                key={social.id}
-                href={social.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-green-200 transition-colors"
-              >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d={social.icon_svg} />
-                </svg>
-              </a>
-            ))}
-          </div>
-
-          {/* Contact Email */}
-          <div className="hidden md:flex items-center gap-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-            <span>{siteConfig.contact_email || 'tours@pescandocostarica.com'}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Navigation */}
-      <nav className="bg-white shadow-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            {/* Logo */}
-            <div className="flex items-center">
-              <a href="/" className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white text-2xl font-bold">🎣</span>
-                </div>
-                <span className="text-xl font-bold text-gray-900">{siteConfig.site_name || 'Pescando Costa Rica'}</span>
-              </a>
-            </div>
-
-            {/* Desktop Menu */}
-            <div className="hidden lg:flex items-center space-x-8">
-              {navigation.map((item) => (
-                <a
-                  key={item.id}
-                  href={item.url}
-                  className={`${
-                    item.url === '/'
-                      ? 'text-green-600 font-medium hover:text-green-700'
-                      : 'text-gray-700 hover:text-green-600'
-                  } transition-colors`}
-                >
-                  {item.label}
-                </a>
-              ))}
-            </div>
-
-            {/* Right Side Icons */}
-            <div className="flex items-center gap-4">
-              {/* User Menu Component */}
-              <UserMenu />
-
-              {/* Mobile Menu Button */}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {mobileMenuOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  )}
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Mobile Menu */}
-          {mobileMenuOpen && (
-            <div className="lg:hidden py-4 border-t border-gray-200">
-              <div className="flex flex-col space-y-3">
-                {navigation.map((item) => (
-                  <a
-                    key={item.id}
-                    href={item.url}
-                    className={`${
-                      item.url === '/'
-                        ? 'text-green-600 font-medium'
-                        : 'text-gray-700'
-                    } px-4 py-2 hover:bg-gray-50 rounded-lg`}
-                  >
-                    {item.label}
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </nav>
-
       {/* Hero Slider Section */}
-      <section className="relative h-[600px] md:h-[700px] overflow-hidden">
+      <section className="relative min-h-[700px] md:min-h-[800px] overflow-hidden">
         {/* Slides */}
         {slides.map((slide, index) => (
           <div
@@ -337,38 +287,139 @@ export default function Home() {
                 className="object-cover"
                 priority={index === 0}
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40"></div>
             </div>
 
-            {/* Content */}
-            <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center">
-              <div className="max-w-2xl text-white">
-                <div className="text-green-400 italic text-lg md:text-xl mb-4 font-light">
-                  Explora Costa Rica
+            {/* Content - Grid Layout */}
+            <div ref={heroContentRef} className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full py-8 lg:py-16">
+                {/* Left Side - Hero Text */}
+                <div className="flex flex-col justify-center text-white">
+                  <div className="hero-animate text-green-400 italic text-lg md:text-xl mb-4 font-light">
+                    Explora Costa Rica
+                  </div>
+                  <h1 className="hero-animate text-3xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight">
+                    {slide.title}
+                  </h1>
+                  <h2 className="hero-animate text-3xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+                    {slide.subtitle}
+                  </h2>
+                  <p className="hero-animate text-base md:text-lg mb-8 text-gray-200 max-w-xl">
+                    {slide.description}
+                  </p>
+                  <div className="hero-animate flex flex-col sm:flex-row gap-4">
+                    <a
+                      href="#tours"
+                      className="glass-btn-primary inline-block px-8 py-4 rounded-lg text-lg text-white font-bold text-center"
+                    >
+                      EMPECEMOS
+                    </a>
+                    <button className="glass-btn-secondary inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg text-lg text-white font-bold">
+                      Quiénes Somos
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
-                <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-4 leading-tight">
-                  {slide.title}
-                </h1>
-                <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
-                  {slide.subtitle}
-                </h2>
-                <p className="text-lg md:text-xl mb-8 text-gray-200 max-w-xl">
-                  {slide.description}
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <a
-                    href="#tours"
-                    className="inline-block bg-green-600 hover:bg-green-700 text-white font-bold px-8 py-4 rounded-lg text-lg transition-all duration-300 shadow-lg text-center"
-                  >
-                    EMPECEMOS
-                  </a>
-                  <button className="inline-flex items-center justify-center gap-2 bg-transparent border-2 border-white hover:bg-white hover:text-gray-900 text-white font-bold px-8 py-4 rounded-lg text-lg transition-all duration-300">
-                    Quiénes Somos
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </button>
+
+                {/* Right Side - Search Filter (Vertical) */}
+                <div className="flex items-center justify-center lg:justify-end">
+                  <div className="w-full max-w-md">
+                    <div className="glass-card-dark rounded-2xl p-6 space-y-5">
+                      <h3 className="text-white text-2xl font-bold mb-4">Buscar Tours</h3>
+
+                      {/* Destino */}
+                      <div className="relative">
+                        <label className="flex items-center gap-2 text-white text-sm font-medium mb-2">
+                          <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                          </svg>
+                          Destino
+                        </label>
+                        <select
+                          value={searchDestino}
+                          onChange={(e) => setSearchDestino(e.target.value)}
+                          className="w-full bg-gray-700/50 text-white border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 cursor-pointer"
+                        >
+                          <option value="">Todas las provincias</option>
+                          <option value="guanacaste">Guanacaste</option>
+                          <option value="puntarenas">Puntarenas</option>
+                          <option value="limon">Limón</option>
+                          <option value="sanJose">San José</option>
+                          <option value="alajuela">Alajuela</option>
+                          <option value="cartago">Cartago</option>
+                          <option value="heredia">Heredia</option>
+                        </select>
+                      </div>
+
+                      {/* Tipo de Pesca */}
+                      <div className="relative">
+                        <label className="flex items-center gap-2 text-white text-sm font-medium mb-2">
+                          <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                            <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
+                          </svg>
+                          Tipo
+                        </label>
+                        <select
+                          value={searchTipo}
+                          onChange={(e) => setSearchTipo(e.target.value)}
+                          className="w-full bg-gray-700/50 text-white border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 cursor-pointer"
+                        >
+                          <option value="">Todos los tipos</option>
+                          <option value="altaMar">Alta Mar</option>
+                          <option value="costera">Costera</option>
+                          <option value="rio">Río y Manglar</option>
+                          <option value="lago">Lago</option>
+                        </select>
+                      </div>
+
+                      {/* Fecha */}
+                      <div className="relative">
+                        <label className="flex items-center gap-2 text-white text-sm font-medium mb-2">
+                          <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                          </svg>
+                          Fecha
+                        </label>
+                        <input
+                          type="date"
+                          value={searchFecha}
+                          onChange={(e) => setSearchFecha(e.target.value)}
+                          className="w-full bg-gray-700/50 text-white border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500"
+                        />
+                      </div>
+
+                      {/* Personas */}
+                      <div className="relative">
+                        <label className="flex items-center gap-2 text-white text-sm font-medium mb-2">
+                          <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                          </svg>
+                          Personas
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="20"
+                          value={searchPersonas}
+                          onChange={(e) => setSearchPersonas(parseInt(e.target.value))}
+                          className="w-full bg-gray-700/50 text-white border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500"
+                          placeholder="Número de personas"
+                        />
+                      </div>
+
+                      {/* Search Button */}
+                      <button className="glass-btn-primary w-full py-4 px-6 rounded-lg text-white font-bold flex items-center justify-center gap-2 hover:scale-105 transition-transform">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        Buscar Tours
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -410,113 +461,13 @@ export default function Home() {
             />
           ))}
         </div>
-
-        {/* Search Filter Bar */}
-        <div className="absolute bottom-0 left-0 right-0 z-30 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="bg-gray-800/90 backdrop-blur-md rounded-lg shadow-2xl p-6">
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                {/* Destino */}
-                <div className="relative">
-                  <label className="flex items-center gap-2 text-white text-sm font-medium mb-2">
-                    <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                    </svg>
-                    Destino
-                  </label>
-                  <select
-                    value={searchDestino}
-                    onChange={(e) => setSearchDestino(e.target.value)}
-                    className="w-full bg-gray-700/50 text-white border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 cursor-pointer"
-                  >
-                    <option value="">Todas las provincias</option>
-                    <option value="guanacaste">Guanacaste</option>
-                    <option value="puntarenas">Puntarenas</option>
-                    <option value="limon">Limón</option>
-                    <option value="sanJose">San José</option>
-                    <option value="alajuela">Alajuela</option>
-                    <option value="cartago">Cartago</option>
-                    <option value="heredia">Heredia</option>
-                  </select>
-                </div>
-
-                {/* Tipo de Pesca */}
-                <div className="relative">
-                  <label className="flex items-center gap-2 text-white text-sm font-medium mb-2">
-                    <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                      <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
-                    </svg>
-                    Tipo
-                  </label>
-                  <select
-                    value={searchTipo}
-                    onChange={(e) => setSearchTipo(e.target.value)}
-                    className="w-full bg-gray-700/50 text-white border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 cursor-pointer"
-                  >
-                    <option value="">Todos los tipos</option>
-                    <option value="altaMar">Alta Mar</option>
-                    <option value="costera">Costera</option>
-                    <option value="rio">Río y Manglar</option>
-                    <option value="lago">Lago</option>
-                  </select>
-                </div>
-
-                {/* Fecha */}
-                <div className="relative">
-                  <label className="flex items-center gap-2 text-white text-sm font-medium mb-2">
-                    <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                    </svg>
-                    Fecha
-                  </label>
-                  <input
-                    type="date"
-                    value={searchFecha}
-                    onChange={(e) => setSearchFecha(e.target.value)}
-                    className="w-full bg-gray-700/50 text-white border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600"
-                  />
-                </div>
-
-                {/* Personas */}
-                <div className="relative">
-                  <label className="flex items-center gap-2 text-white text-sm font-medium mb-2">
-                    <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                    </svg>
-                    Personas
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="20"
-                    value={searchPersonas}
-                    onChange={(e) => setSearchPersonas(parseInt(e.target.value))}
-                    className="w-full bg-gray-700/50 text-white border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600"
-                    placeholder="Personas"
-                  />
-                </div>
-
-                {/* Search Button */}
-                <div className="flex items-end">
-                  <button className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg flex items-center justify-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    Buscar
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </section>
 
       {/* Features Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <section ref={featuresRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
           {features.map((feature) => (
-            <div key={feature.id} className="p-6">
+            <div key={feature.id} className="feature-card glass-card rounded-xl p-6">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-3xl">{feature.icon}</span>
               </div>
@@ -528,11 +479,11 @@ export default function Home() {
       </section>
 
       {/* Promotional Announcements Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <section ref={promoRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="bg-gradient-to-br from-blue-50 via-green-50 to-blue-50 rounded-3xl overflow-hidden shadow-xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             {/* Left Side - Illustration/Image */}
-            <div className="relative p-8 lg:p-12">
+            <div className="promo-left relative p-8 lg:p-12">
               <div className="relative">
                 {/* Decorative Background */}
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-200/30 to-green-200/30 rounded-3xl transform rotate-6"></div>
@@ -584,7 +535,7 @@ export default function Home() {
             </div>
 
             {/* Right Side - Content */}
-            <div className="p-8 lg:p-12 lg:pr-16">
+            <div className="promo-right p-8 lg:p-12 lg:pr-16">
               <div className="space-y-6">
                 {/* Header */}
                 <div>
@@ -660,7 +611,7 @@ export default function Home() {
                 <div className="pt-4">
                   <a
                     href="#tours"
-                    className="inline-flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white font-bold px-8 py-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                    className="glass-btn-primary inline-flex items-center gap-3 px-8 py-4 rounded-xl text-white font-bold transform hover:-translate-y-1"
                   >
                     <span className="text-lg">VER OFERTAS ESPECIALES</span>
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -690,7 +641,7 @@ export default function Home() {
         <div className="mb-12">
           <div className="text-sm text-green-600 font-semibold mb-3">Explora Costa Rica</div>
           <h2 className="text-3xl md:text-5xl font-bold text-gray-900">
-            Tours de Pesca <span className="text-green-600">Destacados</span>
+            Tours de Pesca <span className="gradient-text">Destacados</span>
           </h2>
         </div>
 
@@ -723,12 +674,12 @@ export default function Home() {
 
         {/* Tour Cards Grid */}
         {!loading && tours.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div ref={toursGridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {tours.map((tour) => (
               <Link
                 key={tour.id}
                 href={`/tours/${tour.slug}`}
-                className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 group block"
+                className="tour-card glass-card rounded-xl overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 group block"
               >
                 {/* Tour Image */}
                 <div className="relative h-64 bg-gray-200 overflow-hidden">
@@ -742,7 +693,7 @@ export default function Home() {
                   {/* Top Meta */}
                   <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
                     {tour.is_featured && (
-                      <div className="bg-green-600 text-white text-xs font-bold px-3 py-1.5 rounded">
+                      <div className="glass-badge px-3 py-1.5 rounded text-xs font-bold text-white">
                         Destacado
                       </div>
                     )}
@@ -805,7 +756,7 @@ export default function Home() {
                   <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                     <div>
                       <span className="text-xs text-gray-500">From</span>
-                      <div className="text-xl font-bold text-green-600">
+                      <div className="gradient-text text-xl font-bold">
                         ${tour.price}
                       </div>
                     </div>
@@ -899,7 +850,7 @@ export default function Home() {
         <div className="flex justify-center mt-12">
           <a
             href="/tours"
-            className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold px-8 py-4 rounded-lg text-lg transition-all duration-300 shadow-lg"
+            className="glass-btn-primary inline-flex items-center gap-2 px-8 py-4 rounded-lg text-lg text-white font-bold"
           >
             VER TODOS LOS TOURS
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -911,7 +862,7 @@ export default function Home() {
 
       {/* CTA Section */}
       <section className="bg-gradient-to-r from-green-600 to-green-700 text-white py-16 mt-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div ref={ctaRef} className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             ¿Listo para tu Aventura?
           </h2>
@@ -921,13 +872,13 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href={`tel:+${siteConfig.contact_phone || '50612345678'}`}
-              className="bg-white hover:bg-gray-100 text-green-700 font-bold px-8 py-4 rounded-lg text-lg transition-all duration-300"
+              className="glass-btn-secondary px-8 py-4 rounded-lg text-lg font-bold text-center"
             >
               📞 Llamar Ahora
             </a>
             <a
               href={`https://wa.me/${siteConfig.whatsapp_number || '50612345678'}`}
-              className="bg-green-800 hover:bg-green-900 text-white font-bold px-8 py-4 rounded-lg text-lg transition-all duration-300"
+              className="glass-btn-primary px-8 py-4 rounded-lg text-lg text-white font-bold text-center"
               target="_blank"
               rel="noopener noreferrer"
             >

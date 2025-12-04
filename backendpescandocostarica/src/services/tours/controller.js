@@ -108,9 +108,6 @@ export const getTourBySlug = async (req, res, next) => {
   try {
     const { slug } = req.params;
 
-<<<<<<< HEAD
-    const tourQuery = `
-=======
     // Check if boats and fish_species tables exist
     const checkTablesQuery = `
       SELECT EXISTS (
@@ -130,7 +127,6 @@ export const getTourBySlug = async (req, res, next) => {
     const speciesExist = tablesCheck.rows[0].species_exists;
 
     let tourQuery = `
->>>>>>> 46ca096a4275426371007a8efb8c6246f39a5b9b
       SELECT
         t.*,
         p.name as provincia_name,
@@ -472,7 +468,3 @@ export const searchTours = async (req, res, next) => {
     next(error);
   }
 };
-<<<<<<< HEAD
-=======
-
->>>>>>> 46ca096a4275426371007a8efb8c6246f39a5b9b

@@ -1,10 +1,16 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getTours } from '@/lib/api';
+import { useGsapAnimations, fadeInUp, scaleIn } from '@/hooks/useGsapAnimations';
 
 export default function ToursPage() {
+  const toursGridRef = useRef(null);
+  const headerRef = useRef(null);
+
+  useGsapAnimations();
+
   const [tours, setTours] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -28,6 +34,27 @@ export default function ToursPage() {
 
     fetchTours();
   }, []);
+
+  // Animaciones GSAP
+  useEffect(() => {
+    // Animar header
+    if (headerRef.current) {
+      fadeInUp(headerRef.current.children, {
+        stagger: 0.2,
+        duration: 0.8
+      });
+    }
+
+    // Animar tour cards cuando se cargan
+    if (!loading && toursGridRef.current) {
+      const tourCards = toursGridRef.current.querySelectorAll('.tour-card');
+      scaleIn(tourCards, {
+        stagger: 0.1,
+        duration: 0.6,
+        delay: 0.3
+      });
+    }
+  }, [tours, loading]);
 
   if (loading) {
     return (
@@ -54,23 +81,23 @@ export default function ToursPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="mb-8">
+        <div ref={headerRef} className="mb-8">
           <Link href="/" className="text-green-600 hover:text-green-700 flex items-center gap-2 mb-4">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Volver al inicio
           </Link>
-          <h1 className="text-4xl font-bold text-gray-900">Todos los Tours</h1>
+          <h1 className="text-4xl font-bold text-gray-900">Todos los <span className="gradient-text">Tours</span></h1>
           <p className="text-gray-600 mt-2">{tours.length} tours disponibles</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div ref={toursGridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {tours.map((tour) => (
             <Link
               key={tour.id}
               href={`/tours/${tour.slug}`}
-              className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group"
+              className="tour-card glass-card rounded-xl hover:shadow-lg transition-all duration-300 overflow-hidden group"
             >
               <div className="relative h-64">
                 <Image
@@ -80,7 +107,7 @@ export default function ToursPage() {
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 {tour.is_featured && (
-                  <div className="absolute top-4 left-4 bg-green-600 text-white px-3 py-1 rounded-lg font-bold text-sm">
+                  <div className="absolute top-4 left-4 glass-badge px-3 py-1 rounded-lg font-bold text-sm text-white">
                     Destacado
                   </div>
                 )}
@@ -136,7 +163,7 @@ export default function ToursPage() {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-2xl font-bold text-green-600">${tour.price}</span>
+                    <span className="gradient-text text-2xl font-bold">${tour.price}</span>
                     <span className="text-gray-500 text-sm"> / persona</span>
                   </div>
                   <div className="flex items-center gap-1">

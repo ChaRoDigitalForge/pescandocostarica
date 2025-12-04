@@ -1,13 +1,22 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { getTourBySlug, getTourReviews, getTourAvailability, createBooking } from '@/lib/api';
+import { useGsapAnimations, fadeInUp, fadeInLeft, fadeInRight, scaleIn } from '@/hooks/useGsapAnimations';
 
 export default function TourDetail() {
   const params = useParams();
   const slug = params.slug;
+
+  // Referencias para animaciones
+  const galleryRef = useRef(null);
+  const detailsRef = useRef(null);
+  const sidebarRef = useRef(null);
+  const tabContentRef = useRef(null);
+
+  useGsapAnimations();
 
   const [tour, setTour] = useState(null);
   const [reviews, setReviews] = useState([]);
@@ -84,6 +93,45 @@ export default function TourDetail() {
 
     checkAvailability();
   }, [selectedDate, slug]);
+
+  // Animaciones GSAP
+  useEffect(() => {
+    if (!loading && tour) {
+      // Animar galería de imágenes
+      if (galleryRef.current) {
+        fadeInUp(galleryRef.current, {
+          duration: 0.8
+        });
+      }
+
+      // Animar detalles desde la izquierda
+      if (detailsRef.current) {
+        fadeInLeft(detailsRef.current.children, {
+          stagger: 0.15,
+          duration: 0.8,
+          delay: 0.3
+        });
+      }
+
+      // Animar sidebar desde la derecha
+      if (sidebarRef.current) {
+        fadeInRight(sidebarRef.current, {
+          duration: 0.8,
+          delay: 0.3
+        });
+      }
+    }
+  }, [loading, tour]);
+
+  // Animar contenido de tabs cuando cambia
+  useEffect(() => {
+    if (tabContentRef.current) {
+      fadeInUp(tabContentRef.current.children, {
+        stagger: 0.1,
+        duration: 0.5
+      });
+    }
+  }, [activeTab]);
 
   const handleBooking = async () => {
     setBookingError('');
@@ -214,7 +262,7 @@ export default function TourDetail() {
       </nav>
 
       {/* Image Gallery Section */}
-      <section className="bg-white py-8">
+      <section ref={galleryRef} className="bg-white py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Main Image */}
@@ -256,7 +304,7 @@ export default function TourDetail() {
 
               {/* Featured Badge */}
               {tour.is_featured && (
-                <div className="absolute top-4 left-4 bg-green-600 text-white px-4 py-2 rounded-lg font-bold">
+                <div className="absolute top-4 left-4 glass-badge px-4 py-2 rounded-lg font-bold text-white">
                   Destacado
                 </div>
               )}
@@ -289,9 +337,9 @@ export default function TourDetail() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
-          <div className="lg:col-span-2">
+          <div ref={detailsRef} className="lg:col-span-2">
             {/* Title and Location */}
-            <div className="bg-white rounded-xl p-8 shadow-sm mb-6">
+            <div className="glass-card rounded-xl p-8 mb-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <h1 className="text-4xl font-bold text-gray-900 mb-4">{tour.title}</h1>
@@ -368,7 +416,7 @@ export default function TourDetail() {
             </div>
 
             {/* Tabs */}
-            <div className="bg-white rounded-xl shadow-sm mb-6">
+            <div className="glass-card rounded-xl mb-6">
               <div className="border-b border-gray-200">
                 <nav className="flex space-x-8 px-8 pt-6 overflow-x-auto">
                   {['description', 'boat', 'species', 'reviews', 'location'].map((tab) => (
@@ -391,7 +439,7 @@ export default function TourDetail() {
                 </nav>
               </div>
 
-              <div className="p-8">
+              <div ref={tabContentRef} className="p-8">
                 {/* Description Tab */}
                 {activeTab === 'description' && (
                   <div>
@@ -717,14 +765,14 @@ export default function TourDetail() {
                     <div className="flex gap-3">
                       <button
                         onClick={openInGoogleMaps}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition"
+                        className="glass-btn-primary flex-1 py-3 px-4 rounded-lg text-white font-bold"
                       >
                         Abrir en Google Maps
                       </button>
                       {navigator.share && (
                         <button
                           onClick={shareLocation}
-                          className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-4 rounded-lg transition"
+                          className="glass-btn-secondary py-3 px-4 rounded-lg font-bold"
                         >
                           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -739,7 +787,7 @@ export default function TourDetail() {
 
             {/* Boats Info */}
             {tour.boats && tour.boats.length > 0 && (
-              <div className="bg-white rounded-xl p-8 shadow-sm mb-6">
+              <div className="glass-card rounded-xl p-8 mb-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Botes Disponibles</h2>
                 <div className="space-y-6">
                   {tour.boats.map((boat) => (
@@ -802,7 +850,7 @@ export default function TourDetail() {
 
             {/* Target Species Info */}
             {tour.target_species && tour.target_species.length > 0 && (
-              <div className="bg-white rounded-xl p-8 shadow-sm mb-6">
+              <div className="glass-card rounded-xl p-8 mb-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Especies Objetivo</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {tour.target_species.map((species) => (
@@ -887,7 +935,7 @@ export default function TourDetail() {
 
             {/* Captain Info */}
             {tour.capitan_name && (
-              <div className="bg-white rounded-xl p-8 shadow-sm">
+              <div className="glass-card rounded-xl p-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">Tu Capitán</h2>
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
@@ -912,10 +960,10 @@ export default function TourDetail() {
 
           {/* Booking Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl p-6 shadow-lg sticky top-4">
+            <div ref={sidebarRef} className="glass-card-animated rounded-xl p-6 sticky top-4">
               <div className="mb-6">
                 <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-4xl font-bold text-green-600">${tour.price}</span>
+                  <span className="gradient-text text-4xl font-bold">${tour.price}</span>
                   {tour.original_price && (
                     <>
                       <span className="text-xl text-gray-400 line-through">${tour.original_price}</span>
@@ -995,12 +1043,12 @@ export default function TourDetail() {
                   <button
                     onClick={handleBooking}
                     disabled={bookingLoading || !selectedDate}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="glass-btn-primary w-full py-4 rounded-lg text-white font-bold mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Continuar con la reserva
                   </button>
 
-                  <button className="w-full bg-white border-2 border-green-600 text-green-600 hover:bg-green-50 font-bold py-4 rounded-lg transition-all duration-300">
+                  <button className="glass-btn-secondary w-full py-4 rounded-lg font-bold">
                     Contactar al capitán
                   </button>
 
@@ -1078,14 +1126,14 @@ export default function TourDetail() {
                       <button
                         type="button"
                         onClick={() => setShowBookingForm(false)}
-                        className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-4 rounded-lg transition"
+                        className="glass-btn-secondary flex-1 py-4 rounded-lg font-bold"
                       >
                         Volver
                       </button>
                       <button
                         type="submit"
                         disabled={bookingLoading}
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg transition shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="glass-btn-primary flex-1 py-4 rounded-lg text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {bookingLoading ? 'Procesando...' : 'Confirmar reserva'}
                       </button>
